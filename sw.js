@@ -1,5 +1,5 @@
 // 逐筆帳本 service worker: app shell works offline; the page is fetched fresh when online so updates arrive.
-const VERSION = "ledger-v1";
+const VERSION = "ledger-v2";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-180.png", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -14,8 +14,10 @@ self.addEventListener("fetch", e => {
   const url = new URL(req.url);
   // pages: network first, fall back to cached shell offline
   if (req.mode === "navigate") {
-    e.respondWith(fetch(req).then(r => { const copy = r.clone(); caches.open(VERSION).then(c => c.put("./index.html", copy)); return r; })
-      .catch(() => caches.match("./index.html")));
+    e.respondWith(fetch(req).then(r => {
+        if (!r.ok) return caches.match("./index.html").then(hit => hit || r); // site down or removed: keep running the saved copy
+        const copy = r.clone(); caches.open(VERSION).then(c => c.put("./index.html", copy)); return r;
+      }).catch(() => caches.match("./index.html")));
     return;
   }
   // fonts and static files: cache first, then network (and remember it)
