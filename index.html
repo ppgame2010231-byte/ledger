@@ -50,7 +50,8 @@
         --inc: #23856a;
         --xfer: #6f65a8;
         --warn: #b7791f;
-        --shadow: 0 1px 2px rgba(24, 33, 44, 0.06), 0 4px 14px rgba(24, 33, 44, 0.06);
+        --shadow: 0 1px 2px rgba(24, 33, 44, 0.05);
+        --hair: rgba(24, 33, 44, 0.07);
         --f-body:
           -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui,
           sans-serif;
@@ -72,7 +73,8 @@
           --inc: #5dc7a1;
           --xfer: #aaa0e2;
           --warn: #e3b05a;
-          --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.25);
+          --shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+          --hair: rgba(255, 255, 255, 0.07);
           color-scheme: dark;
         }
       }
@@ -90,7 +92,8 @@
         --inc: #5dc7a1;
         --xfer: #aaa0e2;
         --warn: #e3b05a;
-        --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.25);
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+        --hair: rgba(255, 255, 255, 0.07);
         color-scheme: dark;
       }
 
@@ -200,6 +203,12 @@
       }
 
       /* cards */
+      .card,
+      .day,
+      .menu,
+      .lst {
+        border: 1px solid var(--hair);
+      }
       .card {
         background: var(--surface);
         border-radius: 14px;
@@ -476,6 +485,80 @@
       .trendhit {
         cursor: pointer;
       }
+      .keys button:active,
+      .subs button:active,
+      .mains button:active,
+      .chip:active,
+      .btn:active,
+      .bksp:active {
+        transform: scale(0.96);
+        transition: transform 0.05s;
+      }
+      .keys button {
+        transition: transform 0.12s;
+      }
+      .sheet .sh,
+      .rec .rh {
+        touch-action: pan-x;
+      }
+      .grab {
+        width: 36px;
+        height: 4px;
+        border-radius: 99px;
+        background: var(--line);
+        margin: 0 auto;
+        flex: none;
+      }
+      .xferbox {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center;
+        gap: 8px;
+        margin: 6px 0 10px;
+        padding: 12px;
+        border-radius: 12px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+      .xferbox .ac {
+        min-width: 0;
+      }
+      .xferbox .ac b {
+        display: block;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .xferbox .ac small {
+        color: var(--muted);
+        font-family: var(--f-num);
+        font-size: 12px;
+      }
+      .xferbox .swap {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 20px;
+        display: grid;
+        place-items: center;
+      }
+      .summary .sub {
+        font-size: 11.5px;
+        margin-top: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .legend button[data-list] {
+        cursor: pointer;
+      }
+      .tapline {
+        color: var(--accent);
+        font-weight: 600;
+      }
       .tx:hover {
         background: color-mix(in srgb, var(--surface2) 50%, transparent);
       }
@@ -488,7 +571,9 @@
         place-items: center;
         font-weight: 700;
         font-size: 15px;
-        color: #fff;
+        --c: var(--muted);
+        background: color-mix(in srgb, var(--c) 15%, var(--surface));
+        color: var(--c);
       }
       .tx .mid {
         flex: 1;
@@ -1058,11 +1143,58 @@
       }
       .amount .curs {
         height: 32px;
-        border: 1px solid var(--line);
+        border: 0;
         border-radius: 8px;
-        background: var(--surface2);
+        background: transparent;
         padding: 0 4px;
         font-size: 13px;
+        color: var(--muted);
+        font-family: var(--f-num);
+      }
+      .csbtn {
+        flex: none;
+        width: 34px;
+        height: 32px;
+        border-radius: 9px;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        background: var(--surface2);
+      }
+      .csbtn svg {
+        width: 17px;
+        height: 17px;
+      }
+      .notew {
+        grid-column: span 2;
+        display: flex;
+        gap: 6px;
+      }
+      .notew .inp {
+        flex: 1;
+        min-width: 0;
+      }
+      .ptag {
+        flex: none;
+        height: 40px;
+        padding: 0 11px;
+        border-radius: 10px;
+        background: var(--surface2);
+        color: var(--muted);
+        font-size: 13px;
+        max-width: 42%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ptag.on {
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .recfields .nsug {
+        grid-column: span 2;
+        padding: 0 0 2px;
       }
       .amount .disp {
         flex: 1;
@@ -1169,12 +1301,11 @@
         flex: none;
       }
       .ver {
-        font: 600 11.5px/1 var(--f-num);
+        font: 500 11px/1 var(--f-num);
         color: var(--muted);
-        background: var(--surface2);
-        border-radius: 6px;
-        padding: 4px 6px;
-        vertical-align: 3px;
+        opacity: 0.8;
+        padding: 4px 2px;
+        vertical-align: 2px;
         letter-spacing: 0;
       }
       .mtoday {
@@ -1229,7 +1360,9 @@
         width: 24px;
         height: 24px;
         border-radius: 8px;
-        color: #fff;
+        --c: var(--muted);
+        background: color-mix(in srgb, var(--c) 15%, var(--surface));
+        color: var(--c);
         display: grid;
         place-items: center;
         font-size: 12px;
@@ -1493,8 +1626,30 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "1.2.0";
+      const APP_VERSION = "1.3.0";
       const CHANGELOG = [
+        [
+          "1.3.0",
+          "2026-10-05",
+          [
+            "版面整理：分類色塊改成淡色、卡片陰影變淡，整頁安靜許多",
+            "每筆帳只顯示「名稱／備註 · 帳戶」，帳戶名稱不再帶 (信)(銀) 前綴",
+            "提示一次只出現一條（到期週期帳 → 備份 → 安裝）",
+            "摘要只留支出、收入、結餘和今天花了多少；累計筆數移到「更多」",
+            "記帳畫面：幣別改成小字、分類搜尋收到放大鏡裡、專案收到備註旁的 # 鈕，常用欄位一眼看完",
+            "按鍵有按下去的回饋；所有彈出畫面都可以從頂端往下拉關閉",
+            "記到一半按 X 關掉，會出現「復原」可以叫回來",
+            "兩分鐘內重複記同一筆會先問一下，避免手滑記兩次",
+            "選分類時自動換成那個分類最常用的帳戶（早餐→現金、加油→信用卡）",
+            "帳戶選單裡直接看得到餘額",
+            "輸入金額時，上方顯示這個分類本月已花多少、預算還剩多少",
+            "轉帳畫面一鍵對調轉出與轉入",
+            "摘要的支出旁顯示和上月同期相比",
+            "帳戶明細多了本月支出、收入、轉帳小計",
+            "報表點進子分類後，再點任一列就列出那些帳目",
+            "「今天還沒記帳」可以直接點來記",
+          ],
+        ],
         [
           "1.2.0",
           "2026-10-05",
@@ -2297,8 +2452,11 @@
       }
 
       /* ========== shared bits ========== */
+      // account names carry a type prefix like (信)／(銀)；the type is shown by grouping, so lists drop it
+      const dispAcc = (n) => String(n || "").replace(/^[\(（][^\)）]{1,3}[\)）]\s*/, "") || String(n || "");
       function txLabel(t) {
-        if (t.t === "x") return { title: `${t.acc} → ${t.to}`, color: "var(--xfer)", ch: "轉" };
+        if (t.t === "x")
+          return { title: `${dispAcc(t.acc)} → ${dispAcc(t.to)}`, color: "var(--xfer)", ch: "轉" };
         if (t.t === "a") return { title: t.c || "[轉帳]", color: "var(--xfer)", ch: "轉" };
         return { title: t.s || t.c || "未分類", color: hue(t.c), ch: initial(t.c) };
       }
@@ -2308,18 +2466,15 @@
         const cls = t.t === "e" ? "exp" : t.t === "i" ? "inc" : "xfer";
         const amt = t.t === "e" ? -v : t.t === "i" ? v : t.t === "a" ? v : v;
         const bits = [];
-        if (t.t === "e" || t.t === "i") {
-          if (t.s && t.c) bits.push(t.c);
-          bits.push(t.acc);
-        } else if (t.t === "a") bits.push(t.acc);
-        if (t.p) bits.push("#" + t.p);
         if (t.n && !/^\[[^\]]*\]$/.test(t.n.trim())) bits.push(t.n.replace(/\s*\n\s*/g, " / "));
+        if (t.t !== "x") bits.push(dispAcc(t.acc));
+        if (t.p) bits.push("#" + t.p);
         const fx =
           t.cur && t.cur !== "TWD"
             ? ` <span class="muted small">${esc(t.cur)} ${money(t.a, { dec: true })}</span>`
             : "";
         return `<div class="txw"><div class="txa" aria-hidden="true"><button class="tdup" data-act="txdup" data-id="${esc(t.id)}" data-d="${t.d}" tabindex="-1">複製</button><button class="tdel" data-act="txdel" data-id="${esc(t.id)}" data-d="${t.d}" tabindex="-1">刪除</button></div><button class="tx" data-tx="${esc(t.id)}" data-d="${t.d}">
-    <span class="badge" style="background:${L.color}">${esc(L.ch)}</span>
+    <span class="badge" style="--c:${L.color}">${esc(L.ch)}</span>
     <span class="mid"><div class="t1">${esc(L.title)}${t.rec ? ' <span class="muted small">↻</span>' : ""}</div><div class="t2">${esc(bits.join(" · "))}</div></span>
     <span class="amt ${cls}">${t.t === "x" ? "" : money(amt, { sign: t.t === "i" || (t.t === "a" && v > 0), dec: true })}${t.t === "x" ? money(v, { dec: true }) : ""}${fx}</span></button></div>`;
       }
@@ -2353,28 +2508,43 @@
           M = D.byMonth[k] || { e: 0, i: 0, n: 0 },
           list = monthTx(k);
         let h = "";
+        const notes = [];
         if (S.mode === "sample")
-          h += `<div class="banner"><span class="grow"><b>範例資料</b>　這些是虛構帳目，不會儲存。</span><button class="btn sm" data-act="endSample">結束範例</button></div>`;
+          notes.push(
+            `<div class="banner"><span class="grow"><b>範例資料</b>　這些是虛構帳目，不會儲存。</span><button class="btn sm" data-act="endSample">結束範例</button></div>`,
+          );
         if (S.localOffer)
-          h += `<div class="banner"><span class="grow">這個瀏覽器裡有一份之前存的帳本，要搬到雲端嗎？</span><button class="btn sm primary" data-act="migrate">搬過去</button></div>`;
+          notes.push(
+            `<div class="banner"><span class="grow">這個瀏覽器裡有一份之前存的帳本，要搬到雲端嗎？</span><button class="btn sm primary" data-act="migrate">搬過去</button></div>`,
+          );
         const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
         if (!standalone && /iPhone|iPad|iPod/.test(navigator.userAgent) && !S.hideInstall)
-          h += `<div class="banner"><span class="grow">裝成 App：按 Safari 下方的<b>分享</b>，再選<b>「加入主畫面」</b>。</span><button class="btn sm" data-act="hideInstall">知道了</button></div>`;
+          notes.push(
+            `<div class="banner"><span class="grow">裝成 App：按 Safari 下方的<b>分享</b>，再選<b>「加入主畫面」</b>。</span><button class="btn sm" data-act="hideInstall">知道了</button></div>`,
+          );
         if (S.mode === "local" && S.hasData) {
           const lb = S.meta.lastBackup;
           const days = lb ? Math.floor((parseD(todayStr()) - parseD(lb)) / 864e5) : null;
           const snoozed = S.meta.backupSnooze && todayStr() < S.meta.backupSnooze;
           if ((days === null || days >= 7) && !snoozed)
-            h += `<div class="banner warn"><span class="grow">${days === null ? "還沒備份過。" : "上次備份是 " + days + " 天前。"}帳只存在這支手機，建議每週備份一次。</span><button class="btn sm" data-act="snooze">稍後</button><button class="btn sm primary" data-act="backup">備份</button></div>`;
+            notes.push(
+              `<div class="banner warn"><span class="grow">${days === null ? "還沒備份過。" : "上次備份是 " + days + " 天前。"}帳只存在這支手機，建議每週備份一次。</span><button class="btn sm" data-act="snooze">稍後</button><button class="btn sm primary" data-act="backup">備份</button></div>`,
+            );
         }
         const due = S.mode !== "sample" ? dueRules() : [];
         if (due.length)
-          h += `<div class="banner warn"><span class="grow">${due.length} 筆週期帳目到期：${esc(
-            due
-              .slice(0, 3)
-              .map((r) => r.tpl.s || r.tpl.c || r.tpl.n || "轉帳")
-              .join("、"),
-          )}${due.length > 3 ? "…" : ""}</span><button class="btn sm primary" data-act="runDue">產生</button></div>`;
+          notes.splice(
+            S.mode === "sample" || S.localOffer ? 1 : 0,
+            0,
+            `<div class="banner warn"><span class="grow">${due.length} 筆週期帳目到期：${esc(
+              due
+                .slice(0, 3)
+                .map((r) => r.tpl.s || r.tpl.c || r.tpl.n || "轉帳")
+                .join("、"),
+            )}${due.length > 3 ? "…" : ""}</span><button class="btn sm primary" data-act="runDue">產生</button></div>`,
+          );
+        // show only the most important notice; the next one appears once this is handled
+        if (notes.length) h += notes[0];
         if (!S.hasData && S.mode !== "sample") {
           h += `<div class="card onboard"><h2>開始你的逐筆帳本</h2><p>把 CWMoney 匯出的 CSV 丟進來，十幾年的帳一次接上；或直接按右下角 ＋ 從今天開始記。想先看看長什麼樣子，可以載入一份範例。</p>
     <div class="btnrow"><button class="btn primary" data-act="import">匯入 CSV</button><button class="btn" data-act="sample">看範例</button></div>
@@ -2383,8 +2553,22 @@
         }
         const bud = S.meta.budgets?.total || 0;
         const net = M.i - M.e;
+        // same days of the previous month, for a fair comparison mid-month
+        let cmp = "";
+        {
+          const pk = addMonths(k, -1),
+            isCur = k === mkey(todayStr()),
+            cut = todayStr().slice(8);
+          let pe = 0;
+          for (const t of monthTx(pk))
+            if (t.t === "e" && !D.excl.has(t.c) && (!isCur || t.d.slice(8) <= cut)) pe += sub(t);
+          if (pe > 0 && M.e > 0) {
+            const pc = Math.round(((M.e - pe) / pe) * 100);
+            cmp = `<div class="sub dl ${Math.abs(pc) < 1 ? "flat" : pc > 0 ? "bad" : "good"}" style="text-align:left">${isCur ? "上月同期" : "比上月"} ${Math.abs(pc) < 1 ? "持平" : (pc > 0 ? "▲" : "▼") + Math.abs(pc) + "%"}</div>`;
+          }
+        }
         h += `<div class="card"><div class="summary">
-    <div><div class="k">支出</div><div class="v num exp">${money(M.e)}</div></div>
+        <div><div class="k">支出</div><div class="v num exp">${money(M.e)}</div>${cmp}</div>
     <div><div class="k">收入</div><div class="v num inc">${money(M.i)}</div></div>
     <div><div class="k">結餘</div><div class="v num" style="color:${net < 0 ? "var(--exp)" : "var(--ink)"}">${money(net, { sign: true })}</div></div></div>`;
         if (bud) {
@@ -2400,9 +2584,9 @@
           (t) => t.d === todayStr() && t.t === "e" && !D.excl.has(t.c),
         );
         const tde = tdl.reduce((s2, t) => s2 + sub(t), 0);
-        h += `<div class="meta-line"><span>今天 <b class="${tde ? "exp" : ""}">${tde ? "−" + money(tde) : "0"}</b>${tdl.length ? `（${tdl.length} 筆）` : ""}</span><span>本月 <b>${M.n || 0}</b> 筆</span><span>累計 <b>${D.count.toLocaleString()}</b> 筆</span>${D.first ? `<span>自 <b>${D.first.slice(0, 7).replace("-", "/")}</b> 起</span>` : ""}<span>${D.streak ? `連續記帳 <b>${D.streak}</b> 天${D.tx.length && D.tx[D.tx.length - 1].d < todayStr() && !monthTx(mkey(todayStr())).some((t) => t.d === todayStr()) ? "（今天還沒記）" : ""}` : "今天還沒記帳"}</span></div></div>`;
+        h += `<div class="meta-line">${tdl.length ? `<span>今天 <b class="exp">−${money(tde)}</b>（${tdl.length} 筆）</span>${D.streak ? `<span>連續記帳 <b>${D.streak}</b> 天</span>` : ""}` : `<span>${D.streak ? `連續記帳 <b>${D.streak}</b> 天 · ` : ""}<button class="tapline" data-act="addToday">今天還沒記帳，記一筆 ›</button></span>`}</div></div>`;
         h += list.length
-          ? dayGroups(list, { add: true })
+          ? dayGroups(list)
           : `<div class="card empty">這個月還沒有帳目。<br>按右下角 ＋ 記第一筆。</div>`;
         return h;
       }
@@ -2537,7 +2721,7 @@
             dTotal,
             R.drill || (R.type === "e" ? "支出" : "收入"),
           )}</div>`;
-          h += `<div class="legend">${rows.map(([n, v]) => `<button ${R.drill ? "" : `data-drill="${esc(n)}"`}><span class="sw" style="background:${colorOf(n)}"></span><span>${esc(n)}</span><span class="pc">${((v / dTotal) * 100).toFixed(1)}%</span><span class="lv">${money(v)}</span>${prevKey ? delta(v, prev[n]) : "<span></span>"}</button>`).join("")}</div>${prevKey ? `<div class="small muted" style="margin-top:6px">▲▼ 和${prevLabel}${partial ? `（1 ${R.period === "m" ? "日" : "月 1 日"}到${R.period === "m" ? " " + +td0.slice(8) + " 日" : " " + +td0.slice(5, 7) + "/" + +td0.slice(8)}）` : ""}相比</div>` : ""}`;
+          h += `<div class="legend">${rows.map(([n, v]) => `<button ${R.drill ? `data-list="${esc(n)}"` : `data-drill="${esc(n)}"`}><span class="sw" style="background:${colorOf(n)}"></span><span>${esc(n)}</span><span class="pc">${((v / dTotal) * 100).toFixed(1)}%</span><span class="lv">${money(v)}</span>${prevKey ? delta(v, prev[n]) : "<span></span>"}</button>`).join("")}</div>${prevKey ? `<div class="small muted" style="margin-top:6px">▲▼ 和${prevLabel}${partial ? `（1 ${R.period === "m" ? "日" : "月 1 日"}到${R.period === "m" ? " " + +td0.slice(8) + " 日" : " " + +td0.slice(5, 7) + "/" + +td0.slice(8)}）` : ""}相比</div>` : ""}${R.drill ? `<div class="small muted">點任一列可以看那些帳目</div>` : ""}`;
         }
         h += `</div>`;
         // budgets
@@ -2680,12 +2864,12 @@
           const vis = L.filter((a) => !a.hidden);
           if (!vis.length) continue;
           const sum = vis.reduce((s, a) => s + a.b, 0);
-          h += `<div class="acgroup"><h4><span>${esc(g)}</span><span class="num">${money(sum)}</span></h4>${vis.map((a) => `<button class="acrow" data-acc="${esc(a.name)}"><span class="nm">${esc(a.name)}</span><span class="num" style="font-weight:600;${a.b < 0 ? "color:var(--exp)" : ""}">${money(a.b)}</span></button>`).join("")}</div>`;
+          h += `<div class="acgroup"><h4><span>${esc(g)}</span><span class="num">${money(sum)}</span></h4>${vis.map((a) => `<button class="acrow" data-acc="${esc(a.name)}"><span class="nm">${esc(dispAcc(a.name))}</span><span class="num" style="font-weight:600;${a.b < 0 ? "color:var(--exp)" : ""}">${money(a.b)}</span></button>`).join("")}</div>`;
         }
         h += `</div>`;
         const hid = acc.filter((a) => a.hidden);
         if (hid.length)
-          h += `<details class="card"><summary class="muted">已隱藏 ${hid.length} 個帳戶</summary>${hid.map((a) => `<button class="acrow" data-acc="${esc(a.name)}"><span class="nm">${esc(a.name)}</span><span class="num">${money(a.b)}</span></button>`).join("")}</details>`;
+          h += `<details class="card"><summary class="muted">已隱藏 ${hid.length} 個帳戶</summary>${hid.map((a) => `<button class="acrow" data-acc="${esc(a.name)}"><span class="nm">${esc(dispAcc(a.name))}</span><span class="num">${money(a.b)}</span></button>`).join("")}</details>`;
         h += `<div class="btnrow"><button class="btn" data-act="addAcc">新增帳戶</button><button class="btn" data-act="transfer">轉帳</button></div>`;
         return h;
       }
@@ -2718,7 +2902,7 @@
         return `<div class="menu">${it("search", "search", "搜尋帳目", "備註、分類、帳戶、金額範圍")}${it("budgets", "budget", "預算", S.meta.budgets?.total ? "每月 " + money(S.meta.budgets.total) : "還沒設定")}${it("recurring", "rec", "週期記帳", rc ? rc + " 個規則" : "孝親費、房貸、定期定額…")}${it("projects", "proj", "專案", pj ? pj + " 個專案" : "旅行、裝修這類跨月花費")}${it("cats", "cat", "分類管理", "")}</div>
   <div class="menu">${it("import", "imp", "匯入 CSV", "CWMoney 匯出檔（UTF-16、tab 分隔）")}${it("export", "exp", "匯出 CSV", "CWMoney 格式，可接回你的分析腳本")}${it("backup", "exp", "完整備份", S.meta.lastBackup ? "上次 " + S.meta.lastBackup + "，可存到 iCloud 雲碟" : "JSON，可存到 iCloud 雲碟")}${it("restore", "imp", "從備份還原", "")}</div>
   <div class="menu">${it("settings", "set", "設定", "報表排除分類、金額正負慣例、資料位置")}</div>
-  <p class="small muted" style="text-align:center">${S.mode === "sample" ? "範例模式，不會儲存" : "資料只存在這支手機"}${S.meta.lastBackup ? "　·　上次備份 " + S.meta.lastBackup : ""}　·　${D.count.toLocaleString()} 筆　·　v${APP_VERSION}</p>`;
+  <p class="small muted" style="text-align:center">${S.mode === "sample" ? "範例模式，不會儲存" : "資料只存在這支手機"}${S.meta.lastBackup ? "　·　上次備份 " + S.meta.lastBackup : ""}　·　${D.count.toLocaleString()} 筆${D.first ? `，自 ${D.first.slice(0, 7).replace("-", "/")} 起` : ""}　·　v${APP_VERSION}</p>`;
       }
 
       /* ========== view bindings ========== */
@@ -2766,6 +2950,29 @@
             render();
             return;
           }
+          if (b.dataset.list !== undefined) {
+            const n = b.dataset.list,
+              R2 = S.rep;
+            const L = periodTx().filter(
+              (t) => t.t === R2.type && t.c === R2.drill && (n === "（未分子類）" ? !t.s : t.s === n),
+            );
+            const tot = L.reduce((a, t) => a + sub(t), 0);
+            openSheet(
+              `${R2.drill} › ${n}`,
+              (api) => {
+                api.body.innerHTML = `<div class="stack"><div class="card"><div class="summary"><div><div class="k">筆數</div><div class="v num">${L.length}</div></div><div><div class="k">合計</div><div class="v num ${R2.type === "e" ? "exp" : "inc"}">${money(tot)}</div></div><div><div class="k">平均</div><div class="v num">${money(tot / Math.max(1, L.length))}</div></div></div></div>${dayGroups(L, { year: true })}</div>`;
+                api.body.onclick = (e2) => {
+                  const r = e2.target.closest("[data-tx]");
+                  if (r) {
+                    const t = findTx(r.dataset.tx, r.dataset.d);
+                    if (t) openRecord(t);
+                  }
+                };
+              },
+              { back: true },
+            );
+            return;
+          }
           if (b.dataset.acc) {
             openAccount(b.dataset.acc);
             return;
@@ -2782,6 +2989,7 @@
               S.rep.drill = null;
               render();
             },
+            addToday: () => openRecord(),
             snooze: () => {
               S.meta.backupSnooze = addDays(todayStr(), 3);
               saveMeta();
@@ -2868,17 +3076,60 @@
         el.className = "sheet";
         el.setAttribute("role", "dialog");
         el.setAttribute("aria-label", title);
-        el.innerHTML = `<div class="sh"><button class="iconbtn" data-close aria-label="關閉">${back ? BI : XI}</button><h2>${esc(title)}</h2><span style="width:40px"></span></div><div class="sb"></div>`;
+        el.innerHTML = `<div class="grab" style="margin-top:6px"></div><div class="sh"><button class="iconbtn" data-close aria-label="關閉">${back ? BI : XI}</button><h2>${esc(title)}</h2><span style="width:40px"></span></div><div class="sb"></div>`;
         $("#sheets").appendChild(el);
         const close = () => {
           el.remove();
           document.body.style.overflow = $("#sheets").children.length ? "hidden" : "";
         };
         el.querySelector("[data-close]").onclick = close;
+        pullDown(el, close);
         document.body.style.overflow = "hidden";
         const api = { el, body: el.querySelector(".sb"), close, refresh: () => build(api) };
         build(api);
         return api;
+      }
+      // drag the header of a sheet downwards to close it (iOS-style)
+      function pullDown(el, onClose) {
+        let y0 = null,
+          x0 = 0;
+        el.addEventListener(
+          "touchstart",
+          (e) => {
+            if (!e.target.closest(".sh,.rh,.grab")) {
+              y0 = null;
+              return;
+            }
+            y0 = e.touches[0].clientY;
+            x0 = e.touches[0].clientX;
+            el.style.transition = "none";
+          },
+          { passive: true },
+        );
+        el.addEventListener(
+          "touchmove",
+          (e) => {
+            if (y0 === null) return;
+            const dy = e.touches[0].clientY - y0;
+            if (dy > 0) el.style.transform = `translateY(${Math.min(dy, 220)}px)`;
+          },
+          { passive: true },
+        );
+        el.addEventListener(
+          "touchend",
+          (e) => {
+            if (y0 === null) return;
+            const dy = e.changedTouches[0].clientY - y0,
+              dx = Math.abs(e.changedTouches[0].clientX - x0);
+            y0 = null;
+            el.style.transition = "transform .18s ease-out";
+            if (dy > 90 && dx < 80) {
+              el.style.transform = "translateY(100%)";
+              setTimeout(onClose, 160);
+            } else el.style.transform = "";
+          },
+          { passive: true },
+        );
       }
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
@@ -3031,11 +3282,62 @@
           }
           let o = "";
           for (const g of Object.keys(by))
-            o += `<optgroup label="${esc(g)}">${by[g].map((a) => `<option ${a.name === sel ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</optgroup>`;
+            o += `<optgroup label="${esc(g)}">${by[g].map((a) => `<option value="${esc(a.name)}" ${a.name === sel ? "selected" : ""}>${esc(dispAcc(a.name))}　${short(D.bal[a.name] || 0)}</option>`).join("")}</optgroup>`;
           if (sel && !S.meta.accounts.find((a) => a.name === sel))
-            o += `<option selected>${esc(sel)}</option>`;
+            o += `<option value="${esc(sel)}" selected>${esc(sel)}</option>`;
           return o;
         };
+        // the account you usually pay this category with
+        function accFor(t, c, s2) {
+          const cut = addDays(todayStr(), -180),
+            cnt = {};
+          for (let i = D.tx.length - 1; i >= 0; i--) {
+            const x = D.tx[i];
+            if (x.d < cut) break;
+            if (x.t !== t || x.c !== c || (s2 && x.s !== s2)) continue;
+            cnt[x.acc] = (cnt[x.acc] || 0) + 1;
+          }
+          const best = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0];
+          return best && S.meta.accounts.some((a) => a.name === best[0] && !a.hidden) ? best[0] : null;
+        }
+        function autoAcc() {
+          if (R.accTouched || editing) return;
+          const a = accFor(R.t, R.c, R.s);
+          if (a) R.acc = a;
+        }
+        // this month so far for the chosen category, shown while typing the amount
+        function catContext() {
+          if (R.t !== "e" || !R.c) return "";
+          const k = mkey(R.d);
+          let spent = 0;
+          for (const x of monthTx(k))
+            if (x.t === "e" && x.c === R.c && !(editing && x.id === tx.id)) spent += sub(x);
+          const bud = S.meta.budgets?.cats?.[R.c] || 0;
+          let s2 = `${k === mkey(todayStr()) ? "本月" : k.slice(5).replace(/^0/, "") + "月"}${R.c} 已 ${money(spent)}`;
+          if (bud) s2 += spent > bud ? `　超出預算 ${money(spent - bud)}` : `　預算剩 ${money(bud - spent)}`;
+          return s2;
+        }
+        function tryClose() {
+          if (!editing && R.expr) {
+            readFields();
+            const snap = {
+              t: R.t,
+              expr: R.expr,
+              c: R.c,
+              s: R.s,
+              acc: R.acc,
+              to: R.to,
+              d: R.d,
+              p: R.p,
+              n: R.n,
+              cur: R.cur,
+              r: R.r,
+            };
+            close();
+            toast("已捨棄這筆", { label: "復原", fn: () => openRecord(null, snap) });
+          } else close();
+        }
+        pullDown(el, () => tryClose());
         function panesHTML() {
           const cats = S.meta.cats[R.t] || [],
             main = cats.find((c) => c.n === R.c);
@@ -3059,7 +3361,7 @@
             }</div></div>`;
           }
           return `<div class="panes">
-          <div class="mains" id="rMains">${cats.map((c) => `<button data-main="${esc(c.n)}" aria-pressed="${c.n === R.c}"><span class="dot" style="background:${hue(c.n)}">${esc(initial(c.n))}</span>${esc(c.n)}</button>`).join("")}<button data-act="addMain" class="muted">＋ 主分類</button></div>
+          <div class="mains" id="rMains">${cats.map((c) => `<button data-main="${esc(c.n)}" aria-pressed="${c.n === R.c}"><span class="dot" style="--c:${hue(c.n)}">${esc(initial(c.n))}</span>${esc(c.n)}</button>`).join("")}<button data-act="addMain" class="muted">＋ 主分類</button></div>
           <div><div class="subs">${(main?.s || []).map((s2) => `<button data-sub="${esc(s2)}" aria-pressed="${s2 === R.s}">${esc(s2)}</button>`).join("")}<button data-act="addSub" class="muted" style="border-style:dashed">＋ 子分類</button></div></div>
         </div>`;
         }
@@ -3080,7 +3382,7 @@
               : [];
           const nsug = R.t === "e" || R.t === "i" ? notesFor(R.t, R.c, R.s).filter((n) => n !== R.n) : [];
           const keepScroll = el.querySelector("#rMains")?.scrollTop || 0;
-          el.innerHTML = `<div class="rec">
+          el.innerHTML = `<div class="rec"><div class="grab" style="margin-top:6px"></div>
       <div class="rh"><button class="iconbtn" data-close aria-label="關閉">${XI}</button>
         ${
           R.t === "a"
@@ -3099,35 +3401,37 @@
         <select class="curs" id="rCur" aria-label="幣別">${["TWD", "USD", "JPY", "EUR", "CNY", "HKD", "KRW", "GBP", "AUD", "SGD"].map((c) => `<option ${c === R.cur ? "selected" : ""}>${c}</option>`).join("")}</select>
         ${R.cur !== "TWD" ? `<input class="inp rate num" id="rRate" inputmode="decimal" value="${R.r}" aria-label="匯率" title="匯率">` : ""}
         ${R.t === "a" ? `<button class="chip" id="rNeg" aria-pressed="${!!R.neg}">${R.neg ? "減少" : "增加"}</button>` : ""}
-                <div class="disp" style="order:0"><div class="expr">${hasOp ? esc(R.expr) + " =" : R.cur !== "TWD" && v ? "≈ NT$ " + money(v * R.r, { dec: true }) : ""}</div>
+                <div class="disp" style="order:0"><div class="expr">${hasOp ? esc(R.expr) + " =" : R.cur !== "TWD" && v ? "≈ NT$ " + money(v * R.r, { dec: true }) : esc(catContext())}</div>
         <div class="val ${R.t === "e" ? "exp" : R.t === "i" ? "inc" : "xfer"}">${R.expr ? money(v, { dec: true }) : "0"}</div></div>
         <button class="bksp" data-k="⌫" aria-label="刪除一位，長按清空"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H9l-6 7 6 7h12z"/><path d="M17 9.5l-5 5M12 9.5l5 5"/></svg></button>
       </div>
       <div class="catarea">
         ${
           isX
-            ? `<p class="small muted" style="margin:6px 0">${R.t === "x" ? "轉帳不算收支，只移動帳戶之間的錢：繳信用卡、提款、存錢到投資帳戶都用這個。" : "帳戶調整只改變單一帳戶餘額，不列入收支（例如匯入的轉帳列、市值變動）。"}</p>`
+            ? R.t === "x"
+              ? `<div class="xferbox"><div class="ac"><small>轉出</small><b>${esc(dispAcc(R.acc))}</b><small>${money(D.bal[R.acc] || 0)}</small></div><button class="swap" data-act="swap" aria-label="對調轉出與轉入">⇄</button><div class="ac" style="text-align:right"><small>轉入</small><b>${esc(dispAcc(R.to))}</b><small>${money(D.bal[R.to] || 0)}</small></div></div><p class="small muted" style="margin:0">轉帳不算收支，只移動帳戶之間的錢：繳信用卡、提款、存錢到投資帳戶都用這個。</p>`
+              : `<p class="small muted" style="margin:6px 0">帳戶調整只改變單一帳戶餘額，不列入收支（例如匯入的轉帳列、市值變動）。</p>`
             : `
-                <div class="ctop"><input class="csearch ${R.q ? "on" : ""}" id="rCatQ" type="search" placeholder="🔍 搜尋分類" value="${esc(R.q || "")}" autocomplete="off" aria-label="搜尋分類" enterkeyhint="search">${tops.length && !editing && !R.q ? `<div class="freq">${tops.map((f, i) => `<button data-top="${i}">${esc(f.s || f.c)} · ${esc(f.acc)}</button>`).join("")}</div>` : ""}</div>
-        ${panesHTML()}
-        ${nsug.length ? `<div class="nsug"><span class="lbl">常用備註</span>${nsug.map((n, i) => `<button data-note="${i}">${esc(n)}</button>`).join("")}</div>` : ""}`
+                                <div class="ctop">${R.qOpen ? `<input class="csearch on" id="rCatQ" type="search" placeholder="輸入分類名稱，例如 咖啡" value="${esc(R.q || "")}" autocomplete="off" aria-label="搜尋分類" enterkeyhint="search"><button class="btn sm" data-act="qclose">取消</button>` : `<button class="csbtn" data-act="qopen" aria-label="搜尋分類"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></button>${tops.length && !editing ? `<div class="freq">${tops.map((f, i) => `<button data-top="${i}">${esc(f.s || f.c)} · ${esc(dispAcc(f.acc))}</button>`).join("")}</div>` : `<span class="small muted">選分類</span>`}`}</div>
+                ${panesHTML()}`
         }
       </div>
-      <div class="recfields">
+            <div class="recfields">
+        ${nsug.length ? `<div class="nsug">${nsug.map((n, i) => `<button data-note="${i}">${esc(n)}</button>`).join("")}</div>` : ""}
+        <div class="notew"><input class="inp" id="rNote" placeholder="備註（店家、品項…）" value="${esc(R.n)}" aria-label="備註" enterkeyhint="done">${R.t === "x" || R.t === "a" ? "" : `<button class="ptag ${R.p ? "on" : ""}" data-act="proj" aria-label="專案">${R.p ? "#" + esc(R.p) : "#專案"}</button>`}</div>
         <div class="datef"><button data-dd="-1" aria-label="前一天">‹</button><label class="dlab"><span class="${R.d === todayStr() ? "" : "num"}" style="${R.d === todayStr() ? "" : "color:var(--warn);font-weight:600"}">${dateLabel(R.d)}</span><input type="date" id="rDate" value="${R.d}" aria-label="日期"></label><button data-dd="1" aria-label="後一天">›</button></div>
         <select class="inp" id="rAcc" aria-label="${R.t === "x" ? "轉出帳戶" : "帳戶"}">${accOpts(R.acc)}</select>
+        ${R.t === "x" ? `<select class="inp" id="rTo" aria-label="轉入帳戶" style="grid-column:span 2">${accOpts(R.to)}</select>` : ""}
         ${
-          R.t === "x"
-            ? `<select class="inp" id="rTo" aria-label="轉入帳戶">${accOpts(R.to)}</select>`
-            : `<select class="inp" id="rProj" aria-label="專案"><option value="">無專案</option>${(
+          (R.pOpen || R.p) && R.t !== "x" && R.t !== "a"
+            ? `<select class="inp" id="rProj" aria-label="專案" style="grid-column:span 2"><option value="">無專案</option>${(
                 S.meta.projects || []
               )
-                .filter((p) => !p.done || p.n === R.p)
-                .map((p) => `<option ${p.n === R.p ? "selected" : ""}>${esc(p.n)}</option>`)
+                .filter((p2) => !p2.done || p2.n === R.p)
+                .map((p2) => `<option ${p2.n === R.p ? "selected" : ""}>${esc(p2.n)}</option>`)
                 .join("")}<option value="__new">＋ 新專案…</option></select>`
+            : ""
         }
-        <input class="inp" id="rNote" placeholder="備註（店家、品項…）" value="${esc(R.n)}" ${R.t === "x" ? "" : 'style="grid-column:span 1"'} aria-label="備註" enterkeyhint="done">
-        ${R.t === "x" ? "" : ""}
       </div>
       ${confirmDel ? `<div style="padding:0 16px 6px"><div class="confirm"><span>確定刪除這筆？刪除後無法復原。</span><div class="btnrow"><button class="btn danger" data-act="reallyDel">刪除</button><button class="btn" data-act="cancelDel">取消</button></div></div></div>` : ""}
       <div class="keys">
@@ -3135,9 +3439,13 @@
         ${editing ? `<button class="del" data-act="del">刪除</button><button class="again" data-act="dup">複製</button>` : `<button class="again" data-act="clear">清除</button><button class="again" data-act="again">再記一筆</button>`}
         <button class="save" data-act="save">${editing ? "儲存修改" : "儲存"}</button>
       </div></div>`;
-          if (R.t === "x") {
-            const n = el.querySelector("#rNote");
-            n.style.gridColumn = "span 2";
+          if (R.qOpen && R.focusQ) {
+            R.focusQ = false;
+            const qi = el.querySelector("#rCatQ");
+            if (qi) {
+              qi.focus();
+              qi.setSelectionRange(qi.value.length, qi.value.length);
+            }
           }
           const mm = el.querySelector("#rMains");
           if (mm) {
@@ -3154,6 +3462,7 @@
           if (g("#rAcc")) R.acc = g("#rAcc").value;
           if (g("#rTo")) R.to = g("#rTo").value;
           if (g("#rProj") && g("#rProj").value !== "__new") R.p = g("#rProj").value;
+          else if (!g("#rProj") && !R.pOpen) R.p = R.p || "";
           if (g("#rNote")) R.n = g("#rNote").value;
           if (g("#rRate")) R.r = +g("#rRate").value || 1;
         }
@@ -3172,6 +3481,30 @@
             toast("請選分類");
             return;
           }
+          if (!editing && !R.force) {
+            const now = Date.now();
+            const twin = monthTx(mkey(R.d)).find(
+              (x) =>
+                x.d === R.d &&
+                x.t === R.t &&
+                +x.a === r2(v) &&
+                (x.c || "") === (R.c || "") &&
+                (x.s || "") === (R.s || "") &&
+                x.acc === R.acc &&
+                now - (x.ts || 0) < 120000,
+            );
+            if (twin) {
+              toast(`剛才已記過一樣的 ${money(v)}`, {
+                label: "仍要再記",
+                fn: () => {
+                  R.force = true;
+                  save(keepOpen);
+                },
+              });
+              return;
+            }
+          }
+          R.force = false;
           const t = {
             id: editing ? tx.id : uid(),
             d: R.d,
@@ -3229,7 +3562,7 @@
           const b = e.target.closest("button");
           if (!b) return;
           if (b.hasAttribute("data-close")) {
-            close();
+            tryClose();
             return;
           }
           if (b.dataset.k) {
@@ -3278,6 +3611,7 @@
             R.c = b.dataset.main;
             const m = S.meta.cats[R.t].find((c) => c.n === R.c);
             R.s = (m && m.s[0]) || "";
+            autoAcc();
             draw();
             return;
           }
@@ -3288,12 +3622,43 @@
             const m = S.meta.cats[R.t].find((x) => x.n === c);
             R.s = s2 || (m && m.s[0]) || "";
             R.q = "";
+            R.qOpen = false;
+            autoAcc();
             draw();
             return;
           }
           if (b.dataset.sub !== undefined) {
             readFields();
             R.s = b.dataset.sub;
+            autoAcc();
+            draw();
+            return;
+          }
+          if (b.dataset.act === "qopen") {
+            readFields();
+            R.qOpen = true;
+            R.focusQ = true;
+            draw();
+            return;
+          }
+          if (b.dataset.act === "qclose") {
+            readFields();
+            R.qOpen = false;
+            R.q = "";
+            draw();
+            return;
+          }
+          if (b.dataset.act === "proj") {
+            readFields();
+            R.pOpen = !R.pOpen;
+            if (!R.pOpen) R.p = "";
+            draw();
+            return;
+          }
+          if (b.dataset.act === "swap") {
+            readFields();
+            [R.acc, R.to] = [R.to, R.acc];
+            R.accTouched = true;
             draw();
             return;
           }
@@ -3438,7 +3803,8 @@
           }
           if (e.target.id === "rDate" || e.target.id === "rAcc" || e.target.id === "rTo") {
             readFields();
-            if (e.target.id === "rDate") draw();
+            if (e.target.id === "rAcc" || e.target.id === "rTo") R.accTouched = true;
+            if (e.target.id === "rDate" || R.t === "x") draw();
           }
         });
         el.addEventListener("keydown", (e) => {
@@ -3543,7 +3909,7 @@
               init: 0,
               _virtual: true,
             };
-        openSheet(isNew ? "新增帳戶" : name, (api) => {
+        openSheet(isNew ? "新增帳戶" : dispAcc(name), (api) => {
           const list = isNew
             ? []
             : D.tx
@@ -3559,7 +3925,26 @@
             return { t, d, b };
           });
           api.body.innerHTML = `<div class="stack">
-      ${isNew ? "" : `<div class="card"><div class="small muted">目前餘額</div><div class="num" style="font-size:26px;font-weight:600;${(D.bal[name] || 0) < 0 ? "color:var(--exp)" : ""}">${money(D.bal[name] || 0, { dec: true })}</div></div>`}
+            ${
+              isNew
+                ? ""
+                : `<div class="card"><div class="small muted">目前餘額</div><div class="num" style="font-size:26px;font-weight:600;${(D.bal[name] || 0) < 0 ? "color:var(--exp)" : ""}">${money(D.bal[name] || 0, { dec: true })}</div>${(() => {
+                    let e = 0,
+                      i = 0,
+                      xo = 0,
+                      xi = 0;
+                    for (const t of monthTx(mkey(todayStr()))) {
+                      if (t.t === "e" && t.acc === name) e += sub(t);
+                      else if (t.t === "i" && t.acc === name) i += sub(t);
+                      else if (t.t === "x") {
+                        if (t.acc === name) xo += sub(t);
+                        if (t.to === name)
+                          xi += t.iv != null ? +t.iv : t.ia != null ? r2(t.ia * t.ir) : sub(t);
+                      }
+                    }
+                    return `<div class="summary" style="margin-top:12px"><div><div class="k">本月支出</div><div class="num exp" style="font-weight:600">${money(e)}</div></div><div><div class="k">本月收入</div><div class="num inc" style="font-weight:600">${money(i)}</div></div><div><div class="k">本月轉帳</div><div class="num xfer" style="font-weight:600">${money(xi - xo, { sign: true })}</div></div></div>`;
+                  })()}</div>`
+            }
       <div class="card stack">
         <div class="field"><label for="aName">名稱</label><input class="inp" id="aName" value="${esc(acc.name)}"></div>
         <div class="grid2"><div class="field"><label for="aGroup">類型</label><select class="inp" id="aGroup">${GROUPS.map((g) => `<option ${g === acc.group ? "selected" : ""}>${g}</option>`).join("")}</select></div>
@@ -3702,7 +4087,7 @@
           api.body.innerHTML = `<div class="stack">
       <p class="small muted" style="margin:6px 0 0">每月重設。右邊灰字是近三個月平均，可以當起點。</p>
       <div class="card stack"><div class="field"><label for="bTotal">每月總預算</label><div class="grid2" style="align-items:center"><input class="inp num" id="bTotal" inputmode="numeric" value="${B.total || ""}" placeholder="0 = 不設"><span class="small muted num">近三月平均 ${money(tot3)}</span></div></div></div>
-      <div class="lst">${S.meta.cats.e.map((c) => `<div class="li"><span class="badge" style="background:${hue(c.n)};width:30px;height:30px;font-size:13px">${esc(initial(c.n))}</span><span class="grow">${esc(c.n)}<div class="small muted num">平均 ${money(avg[c.n] || 0)}</div></span><input class="inp num" style="width:110px" data-bc="${esc(c.n)}" inputmode="numeric" value="${B.cats?.[c.n] || ""}" placeholder="—" aria-label="${esc(c.n)}預算"></div>`).join("")}</div>
+      <div class="lst">${S.meta.cats.e.map((c) => `<div class="li"><span class="badge" style="--c:${hue(c.n)};width:30px;height:30px;font-size:13px">${esc(initial(c.n))}</span><span class="grow">${esc(c.n)}<div class="small muted num">平均 ${money(avg[c.n] || 0)}</div></span><input class="inp num" style="width:110px" data-bc="${esc(c.n)}" inputmode="numeric" value="${B.cats?.[c.n] || ""}" placeholder="—" aria-label="${esc(c.n)}預算"></div>`).join("")}</div>
       <button class="btn primary" id="bSave">儲存預算</button></div>`;
           api.body.querySelector("#bSave").onclick = () => {
             B.total = +api.body.querySelector("#bTotal").value || 0;
@@ -3729,7 +4114,7 @@
         L.length
           ? `<div class="lst">${L.map((r, i) => {
               const t = r.tpl;
-              return `<div class="li"><span class="badge" style="background:${t.t === "x" ? "var(--xfer)" : hue(t.c)};width:32px;height:32px;font-size:13px">${t.t === "x" ? "轉" : esc(initial(t.c))}</span><span class="grow"><div>${esc(t.t === "x" ? `${t.acc} → ${t.to}` : t.s || t.c)}${t.n ? ` <span class="muted small">${esc(t.n)}</span>` : ""}</div><div class="small muted">${FREQ[r.f]}${r.f === "m" ? " " + r.day + " 號" : ""} · 下次 ${r.next}${r.end ? " · 到 " + r.end : ""}</div></span><span class="num ${t.t === "e" ? "exp" : t.t === "i" ? "inc" : "xfer"}" style="font-weight:600">${money(t.a)}</span><button class="iconbtn" data-del="${i}" aria-label="刪除規則">${XI}</button></div>`;
+              return `<div class="li"><span class="badge" style="--c:${t.t === "x" ? "var(--xfer)" : hue(t.c)};width:32px;height:32px;font-size:13px">${t.t === "x" ? "轉" : esc(initial(t.c))}</span><span class="grow"><div>${esc(t.t === "x" ? `${t.acc} → ${t.to}` : t.s || t.c)}${t.n ? ` <span class="muted small">${esc(t.n)}</span>` : ""}</div><div class="small muted">${FREQ[r.f]}${r.f === "m" ? " " + r.day + " 號" : ""} · 下次 ${r.next}${r.end ? " · 到 " + r.end : ""}</div></span><span class="num ${t.t === "e" ? "exp" : t.t === "i" ? "inc" : "xfer"}" style="font-weight:600">${money(t.a)}</span><button class="iconbtn" data-del="${i}" aria-label="刪除規則">${XI}</button></div>`;
             }).join("")}</div>`
           : `<div class="card empty">還沒有週期規則</div>`
       }
@@ -3909,7 +4294,7 @@
       (
         c,
         i,
-      ) => `<div class="li" style="flex-wrap:wrap"><span class="badge" style="background:${hue(c.n)};width:30px;height:30px;font-size:13px">${esc(initial(c.n))}</span>
+      ) => `<div class="li" style="flex-wrap:wrap"><span class="badge" style="--c:${hue(c.n)};width:30px;height:30px;font-size:13px">${esc(initial(c.n))}</span>
       <button class="grow" style="text-align:left" data-open="${i}"><div>${esc(c.n)}</div><div class="small muted">${c.s.length} 個子分類 · ${use[c.n] || 0} 筆</div></button>
       <button class="iconbtn" data-up="${i}" aria-label="上移">↑</button><button class="iconbtn" data-ren="${i}" aria-label="重新命名">✎</button>
       ${
