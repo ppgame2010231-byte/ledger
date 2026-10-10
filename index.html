@@ -3033,8 +3033,16 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "1.6.1";
+      const APP_VERSION = "1.6.2";
       const CHANGELOG = [
+        [
+          "1.6.2",
+          "2026-10-10",
+          [
+            "「對帳」改成隨時可進：帳戶頁右上多了「對帳」按鈕，更多 › 資料 也有",
+            "對帳按「套用」後留在頁面上，已套用的帳戶更新「目前」數字，其餘可以繼續填、分多次做",
+          ],
+        ],
         [
           "1.6.1",
           "2026-10-10",
@@ -5721,7 +5729,7 @@
         h += `<div class="rowhead acbar"><span class="small muted">${sort ? "調整順序：▲▼ 移動，眼睛是隱藏，左邊換群組" : "全部帳戶"}</span>${
           sort
             ? `<button class="btn sm primary" data-act="acctDone">完成</button>`
-            : `<button class="iconbtn" data-act="acctMenu" aria-label="帳戶選項" aria-haspopup="menu">⋯</button>`
+            : `<span style="display:flex;gap:6px;align-items:center"><button class="btn sm" data-act="recon">對帳</button><button class="iconbtn" data-act="acctMenu" aria-label="帳戶選項" aria-haspopup="menu">⋯</button></span>`
         }</div>`;
         const gsel = (a) =>
           `<select class="gsel" data-ag="${esc(a.name)}" aria-label="${esc(dispAcc(a.name))} 的群組">${order.map((g) => `<option ${g === a.group ? "selected" : ""}>${esc(g)}</option>`).join("")}</select>`;
@@ -5941,7 +5949,7 @@
             ? S.meta.lastBackup.replace(/-/g, "/")
             : "";
         return `<div class="mh">管理</div><div class="menu">${it("budgets", "budget", "預算", S.meta.budgets?.total ? "每月 " + money(S.meta.budgets.total) : "還沒設定")}${it("recurring", "rec", "定期記帳", rc ? rc + " 筆" : "房租、電話費這類每月固定的帳")}${it("projects", "proj", "專案", pj ? pj + " 個專案" : "一趟旅行、一次裝修的花費集中看")}${it("cats", "cat", "分類", "新增、排序、改名、顏色")}</div>
-  <div class="mh">資料</div><div class="menu">${it("backup", "save", "備份", lb ? "上次備份 " + lb : "存一份到 iCloud 雲碟或「檔案」App")}${it("restore", "imp", "還原備份", "")}${it("import", "imp", "從 CWMoney 匯入", "把 CWMoney 匯出的檔案帶進來")}${it("export", "exp", "匯出成 CWMoney 格式", "可以匯回 CWMoney，或用試算表打開")}</div>
+  <div class="mh">資料</div><div class="menu">${it("backup", "save", "備份", lb ? "上次備份 " + lb : "存一份到 iCloud 雲碟或「檔案」App")}${it("restore", "imp", "還原備份", "")}${it("import", "imp", "從 CWMoney 匯入", "把 CWMoney 匯出的檔案帶進來")}${it("export", "exp", "匯出成 CWMoney 格式", "可以匯回 CWMoney，或用試算表打開")}${it("recon", "acct", "對帳", "一次填好所有帳戶的實際餘額，可分多次做")}</div>
   <div class="mh">設定</div><div class="menu">${it("settings", "set", "設定", "外觀、啟動、記帳畫面、明細與報表、帳戶與分類、資料")}${it("about", "info", "關於", "v" + APP_VERSION + "、資料存在哪裡、加到主畫面", true)}</div>
   <p class="small muted" style="text-align:center;margin-top:18px">${S.mode === "sample" ? "範例模式，不會儲存" : "資料只存在這支手機"}　·　${D.count.toLocaleString()} 筆${D.first ? `，自 ${D.first.slice(0, 7).replace("-", "/")} 起` : ""}</p>`;
       }
@@ -7771,7 +7779,7 @@
             )
             .join("");
           api.body.innerHTML = `<div class="stack recon">
-      <div class="card stack"><p class="small" style="margin:0">CWMoney 的匯出檔只有帳目，沒有各帳戶的起始餘額，所以匯入後的餘額會和 CWMoney 不同。把 CWMoney 帳戶頁顯示的餘額填到右欄（欠款填負數，用 ± 切換）；沒填的帳戶不會動，收支報表完全不受影響。</p>
+      <div class="card stack"><p class="small" style="margin:0">CWMoney 的匯出檔只有帳目，沒有各帳戶的起始餘額，所以匯入後的餘額會和 CWMoney 不同。把 CWMoney 帳戶頁顯示的餘額填到右欄（欠款填負數，用 ± 切換）；沒填的帳戶不會動，可以分好幾次慢慢對；收支報表完全不受影響。</p>
         <div class="field"><label for="rMode">差額怎麼處理</label><select class="inp" id="rMode"><option value="init"${mode === "init" ? " selected" : ""}>存成起始餘額（不多一筆帳，建議）</option><option value="adj"${mode === "adj" ? " selected" : ""}>補一筆今天的「餘額調整」</option></select></div></div>
       <div class="card rlist">${rows || `<div class="empty">還沒有帳戶</div>`}</div>
       <div class="btnrow rfoot"><span class="small muted" id="rCnt">還沒有填任何帳戶</span><button class="btn primary" id="rGo" disabled>套用</button></div></div>`;
@@ -7857,14 +7865,17 @@
             S.meta.reconDone = true;
             saveMeta();
             commit();
-            api.close();
-            toast(`已更新 ${C.length} 個帳戶的餘額`, {
+            // stay on the page: the applied rows now show the new 目前, the rest can go on being filled
+            for (const c of C) delete vals[c.name];
+            api.refresh();
+            toast(`已更新 ${C.length} 個帳戶，其餘可以繼續填`, {
               label: "復原",
               fn: () => {
                 for (const [m, v] of prev) m.init = v;
                 for (const t of made) delTx(t);
                 saveMeta();
                 commit();
+                if (api.el.isConnected) api.refresh();
                 toast("已復原");
               },
             });
