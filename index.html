@@ -3563,6 +3563,20 @@
       .heat .head span:first-child {
         grid-column: 1;
       }
+      .signw {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .signw .inp {
+        flex: 1;
+        min-width: 0;
+      }
+      .signw .sqb {
+        flex: none;
+        width: 42px;
+        height: 42px;
+      }
       .rrow .nm small {
         color: var(--muted);
         font-size: 12px;
@@ -3702,8 +3716,15 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "2.3.3";
+      const APP_VERSION = "2.3.4";
       const CHANGELOG = [
+        [
+          "2.3.4",
+          "2026-10-10",
+          [
+            "新增／編輯帳戶的「起始餘額」和「調整餘額」旁加上 ±，手機數字鍵盤沒有負號也能填欠款（信用卡、貸款）",
+          ],
+        ],
         [
           "2.3.3",
           "2026-10-10",
@@ -9586,7 +9607,7 @@
           api.body.innerHTML = `<div class="stack acdetail">
       <div class="card"><div class="rowhead"><span><div class="small muted">目前餘額${cur ? `（${esc(cur)}）` : ""}${acc.hidden ? " · 已隱藏" : ""}${pref("defaultAcc") === name ? " · 預設帳戶" : ""}</div><div class="num acbal ${signCls(balN)}">${cur ? moneyN(cur, balN) : money(bal, { dec: true })}</div>${cur ? `<div class="small muted num">≈ NT$ ${money(bal)}　·　匯率 ${rate}</div>` : ""}</span><span class="small muted">${esc(acc.group)}</span></div>
         <div class="summary" style="margin-top:12px"><div><div class="k">本月支出</div><div class="num exp">${money(e)}</div></div><div><div class="k">本月收入</div><div class="num inc">${money(i)}</div></div><div><div class="k">本月轉帳</div><div class="num xfer">${money(xi - xo, { sign: true })}</div></div></div></div>
-      <div class="card stack" id="aAdjBox" ${adjOpen ? "" : "hidden"}><b>調整餘額</b><div class="field"><label for="aTarget">實際餘額${cur ? `（${esc(cur)}）` : ""}</label><input class="inp num" id="aTarget" inputmode="decimal" value="${r2(balN)}"><span class="small muted">輸入你現在真正的餘額${cur ? `（以 ${esc(cur)} 計）` : ""}，差額會自動補成一筆「餘額調整」。</span></div><div class="btnrow"><button class="btn primary" id="aAdjGo">完成</button><button class="btn" id="aAdjNo">取消</button></div></div>
+      <div class="card stack" id="aAdjBox" ${adjOpen ? "" : "hidden"}><b>調整餘額</b><div class="field"><label for="aTarget">實際餘額${cur ? `（${esc(cur)}）` : ""}</label><span class="signw"><input class="inp num" id="aTarget" inputmode="decimal" value="${r2(balN)}"><button type="button" class="sqb" data-signof="aTarget" aria-label="實際餘額正負切換">±</button></span><span class="small muted">輸入你現在真正的餘額${cur ? `（以 ${esc(cur)} 計）` : ""}，差額會自動補成一筆「餘額調整」。</span></div><div class="btnrow"><button class="btn primary" id="aAdjGo">完成</button><button class="btn" id="aAdjNo">取消</button></div></div>
       ${
         list.length
           ? `<div class="small muted" style="margin:0 4px -4px">金額下方的灰字是記完這筆後的餘額${all.length > list.length ? `　·　顯示最近 ${list.length} 筆` : ""}</div>${dayGroups(
@@ -9820,6 +9841,19 @@
         });
       }
       // new / edit account form (its own sheet; `parent` is the account page that opened it)
+      // ± next to a number field: flips the sign of what is typed (the phone's decimal keypad has no minus)
+      document.getElementById("sheets").addEventListener("click", (e) => {
+        const b = e.target.closest("[data-signof]");
+        if (!b) return;
+        const i = document.getElementById(b.dataset.signof);
+        if (!i) return;
+        let v = i.value.trim();
+        if (!v || v === "0") v = "-";
+        else v = v.startsWith("-") ? v.slice(1) : "-" + v;
+        i.value = v;
+        i.focus();
+        i.dispatchEvent(new Event("input", { bubbles: true }));
+      });
       function openAccountForm(name, parent) {
         const isNew = !name;
         const acc = isNew
@@ -9835,7 +9869,7 @@
           .map((g) => `<option ${g === acc.group ? "selected" : ""}>${esc(g)}</option>`)
           .join("")}</select></div>
         <div class="field"><label for="aCur">幣別</label><select class="inp" id="aCur">${[...new Set([...ACC_CURS, cur0 || "TWD"])].map((c) => `<option value="${c}"${c === (cur0 || "TWD") ? " selected" : ""}>${c === "TWD" ? "TWD 台幣" : c}</option>`).join("")}</select></div></div>
-        <div class="grid2"><div class="field"><label for="aInit">起始餘額<span id="aInitCur">${cur0 ? `（${esc(cur0)}）` : ""}</span></label><input class="inp num" id="aInit" inputmode="decimal" value="${acc.init || 0}"></div>
+        <div class="grid2"><div class="field"><label for="aInit">起始餘額<span id="aInitCur">${cur0 ? `（${esc(cur0)}）` : ""}</span></label><span class="signw"><input class="inp num" id="aInit" inputmode="decimal" value="${acc.init || 0}"><button type="button" class="sqb" data-signof="aInit" aria-label="起始餘額正負切換">±</button></span><span class="small muted">欠款（信用卡、貸款）填負數，按 ± 切換</span></div>
         <div class="field" id="aRateF" ${cur0 ? "" : "hidden"}><label for="aRate">匯率（1 ${esc(cur0 || "外幣")} = ? 台幣）</label><input class="inp num" id="aRate" inputmode="decimal" value="${acc.rate || (cur0 && ((D.accRate && D.accRate[acc.name]) || lastRate(cur0))) || ""}" placeholder="自動用最近一筆"></div></div>
         ${isNew ? `<span class="small muted">起始餘額：現在這個帳戶裡有多少；外幣帳戶以該幣別填。</span>` : `<label class="small" style="display:flex;gap:8px;align-items:center;min-height:40px"><input type="checkbox" id="aHide" ${acc.hidden ? "checked" : ""}> 從帳戶頁隱藏（適合已剪的卡、不用的帳戶）</label>`}
         <div class="btnrow"><button class="btn primary" id="aSave">${isNew ? "新增" : "儲存"}</button></div>
