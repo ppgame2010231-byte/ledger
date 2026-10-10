@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="逐筆帳本" />
     <meta name="theme-color" content="#EDF0F3" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#11151B" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#0D1117" media="(prefers-color-scheme: dark)" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="icon-180.png" />
     <link rel="icon" href="icon-192.png" />
@@ -59,48 +59,63 @@
         --tab-h: 60px;
         --exp-ink: #ffffff;
         --hilite: 0.1;
+        --seg-on: var(--surface);
+        --seg-on-ink: var(--ink);
+        --badge-bg: 15%;
+        --badge-fg: 60%;
+        --badge-fg-base: var(--ink);
       }
       @media (prefers-color-scheme: dark) {
         :root:not([data-theme="light"]) {
-          --bg: #11151b;
-          --surface: #1a2029;
-          --surface2: #242c37;
-          --line: #2e3845;
-          --ink: #e5eaf0;
-          --muted: #95a2b2;
-          --accent: #82a8f0;
+          --bg: #0d1117;
+          --surface: #1b232e;
+          --surface2: #2a3443;
+          --line: #394556;
+          --ink: #e9edf3;
+          --muted: #9eabbb;
+          --accent: #8fb3f5;
           --accent-ink: #0f1622;
-          --accent-soft: #22324d;
-          --exp: #ef8b74;
-          --inc: #5dc7a1;
-          --xfer: #aaa0e2;
-          --warn: #e3b05a;
-          --shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-          --hair: rgba(255, 255, 255, 0.07);
+          --accent-soft: #263a5c;
+          --exp: #f58c70;
+          --inc: #4fd3a0;
+          --xfer: #b8abf5;
+          --warn: #e9b65c;
+          --shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+          --hair: rgba(255, 255, 255, 0.09);
           color-scheme: dark;
-          --exp-ink: #1a2029;
-          --hilite: 0.2;
+          --exp-ink: #1b232e;
+          --hilite: 0.22;
+          --seg-on: #3d4a5e;
+          --seg-on-ink: #ffffff;
+          --badge-bg: 32%;
+          --badge-fg: 58%;
+          --badge-fg-base: #ffffff;
         }
       }
       :root[data-theme="dark"] {
-        --bg: #11151b;
-        --surface: #1a2029;
-        --surface2: #242c37;
-        --line: #2e3845;
-        --ink: #e5eaf0;
-        --muted: #95a2b2;
-        --accent: #82a8f0;
+        --bg: #0d1117;
+        --surface: #1b232e;
+        --surface2: #2a3443;
+        --line: #394556;
+        --ink: #e9edf3;
+        --muted: #9eabbb;
+        --accent: #8fb3f5;
         --accent-ink: #0f1622;
-        --accent-soft: #22324d;
-        --exp: #ef8b74;
-        --inc: #5dc7a1;
-        --xfer: #aaa0e2;
-        --warn: #e3b05a;
-        --shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-        --hair: rgba(255, 255, 255, 0.07);
+        --accent-soft: #263a5c;
+        --exp: #f58c70;
+        --inc: #4fd3a0;
+        --xfer: #b8abf5;
+        --warn: #e9b65c;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+        --hair: rgba(255, 255, 255, 0.09);
         color-scheme: dark;
-        --exp-ink: #1a2029;
-        --hilite: 0.2;
+        --exp-ink: #1b232e;
+        --hilite: 0.22;
+        --seg-on: #3d4a5e;
+        --seg-on-ink: #ffffff;
+        --badge-bg: 32%;
+        --badge-fg: 58%;
+        --badge-fg-base: #ffffff;
       }
 
       * {
@@ -765,8 +780,8 @@
         font-weight: 600;
         font-size: 13px;
         --c: var(--muted);
-        background: color-mix(in srgb, var(--c) 15%, var(--surface));
-        color: color-mix(in srgb, var(--c) 60%, var(--ink));
+        background: color-mix(in srgb, var(--c) var(--badge-bg), var(--surface));
+        color: color-mix(in srgb, var(--c) var(--badge-fg), var(--badge-fg-base));
       }
       .tx .mid {
         flex: 1;
@@ -929,9 +944,19 @@
         font-weight: 500;
       }
       .seg button[aria-pressed="true"] {
-        background: var(--surface);
-        color: var(--ink);
+        background: var(--seg-on);
+        color: var(--seg-on-ink);
         box-shadow: var(--shadow);
+      }
+      /* the record sheet's 支出／收入／轉帳 choice carries its colour once chosen */
+      .seg button[data-type="e"][aria-pressed="true"] {
+        color: var(--exp);
+      }
+      .seg button[data-type="i"][aria-pressed="true"] {
+        color: var(--inc);
+      }
+      .seg button[data-type="x"][aria-pressed="true"] {
+        color: var(--xfer);
       }
 
       /* calendar */
@@ -1885,15 +1910,16 @@
         height: 24px;
         border-radius: 8px;
         --c: var(--muted);
-        background: color-mix(in srgb, var(--c) 15%, var(--surface));
-        color: var(--c);
+        background: color-mix(in srgb, var(--c) var(--badge-bg), var(--surface));
+        color: color-mix(in srgb, var(--c) var(--badge-fg), var(--badge-fg-base));
         display: grid;
         place-items: center;
         font-size: 12px;
         font-weight: 700;
       }
       .mains button[aria-pressed="true"] {
-        background: var(--surface);
+        background: var(--seg-on);
+        color: var(--seg-on-ink);
         box-shadow: var(--shadow);
         font-weight: 600;
       }
@@ -2682,8 +2708,8 @@
         text-overflow: ellipsis;
       }
       .subtabs button[aria-pressed="true"] {
-        background: var(--surface);
-        color: var(--ink);
+        background: var(--seg-on);
+        color: var(--seg-on-ink);
         font-weight: 600;
         box-shadow: var(--shadow);
       }
@@ -3049,8 +3075,16 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "1.7.0";
+      const APP_VERSION = "1.7.1";
       const CHANGELOG = [
+        [
+          "1.7.1",
+          "2026-10-10",
+          [
+            "深色模式重新調色：背景與卡片拉開層次，分類色塊更飽和、字更亮，支出／收入／轉帳三色更分明",
+            "分頁與開關「選中」的那一格在深色下改為亮起（原本反而比較暗，看不出選到哪個）；記帳時 支出／收入／轉帳 選到的會帶自己的顏色",
+          ],
+        ],
         [
           "1.7.0",
           "2026-10-10",
