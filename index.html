@@ -2743,6 +2743,126 @@
         gap: 8px;
         padding: 12px 16px 12px;
       }
+      /* ===== 主頁 (round 4): period cards, the comparison line, tappable cards ===== */
+      button.card {
+        display: block;
+        width: 100%;
+        text-align: left;
+        color: inherit;
+      }
+      .hcard .hh {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        min-width: 0;
+      }
+      .hcard .hh .ht {
+        font-weight: 600;
+        font-size: 15px;
+      }
+      .hcard .hh .chev {
+        margin-left: auto;
+        color: var(--muted);
+        font-size: 20px;
+        line-height: 1;
+        align-self: center;
+      }
+      .hcard .hbody {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 6px;
+      }
+      .hcard .hbig {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+      }
+      .hcard .hbig .num {
+        font-size: 26px;
+        font-weight: 600;
+        line-height: 1.2;
+        white-space: nowrap;
+      }
+      .hcard .k {
+        font-size: 12.5px;
+        color: var(--muted);
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .hcard .hside {
+        display: grid;
+        grid-template-columns: auto auto;
+        gap: 2px 10px;
+        align-items: baseline;
+        font-size: 14px;
+        text-align: right;
+        white-space: nowrap;
+      }
+      .hcard .hside .num {
+        font-weight: 600;
+      }
+      .summary.tight .v {
+        font-size: 17px;
+      }
+      /* 「昨日 1,980 ▼37%」 under the numbers (also on the 日／週／月／年 headline cards) */
+      .hcmp {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px dashed var(--line);
+        font-size: 13px;
+        color: var(--muted);
+        min-height: 22px;
+      }
+      .hcmp .k {
+        color: var(--muted);
+      }
+      .hcmp b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .hcmp .dl {
+        min-width: 0;
+        text-align: left;
+        font-size: 13px;
+      }
+      /* 報表›專案 cards */
+      .pcard.done h3 {
+        color: var(--muted);
+      }
+      .pcard .pbars {
+        margin-top: 12px;
+        gap: 10px;
+      }
+      .pcard .pbars .bh {
+        font-size: 13.5px;
+        margin-bottom: 4px;
+      }
+      /* 帳戶›信用卡 cards */
+      .ccard .ccname {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        min-height: 40px;
+        margin: -8px 0 -8px -6px;
+        padding: 0 6px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        min-width: 0;
+      }
+      .ccard .ccname .chev {
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1;
+      }
+      .ccard.dim .summary .v {
+        color: var(--muted);
+      }
     </style>
   </head>
   <body>
@@ -2750,7 +2870,7 @@
     <div class="app" id="app">
       <header class="top">
         <h1>
-          <span id="viewTitle">明細</span>
+          <span id="viewTitle">主頁</span>
           <button class="ver" id="verBtn" aria-label="版本紀錄"></button>
         </h1>
         <button class="iconbtn" id="hSearch" aria-label="搜尋帳目">
@@ -2777,7 +2897,22 @@
 
     <nav class="tabs" aria-label="主選單">
       <div class="in">
-        <button data-tab="list" aria-current="true">
+        <button data-tab="home" aria-current="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M3.5 11.5L12 4l8.5 7.5" />
+            <path d="M5.5 10v10h13V10" />
+            <path d="M10 20v-6h4v6" />
+          </svg>
+          主頁
+        </button>
+        <button data-tab="list">
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -2791,19 +2926,6 @@
             <circle cx="4" cy="18" r="1" fill="currentColor" />
           </svg>
           明細
-        </button>
-        <button data-tab="cal">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-          >
-            <rect x="3.5" y="5" width="17" height="15" rx="2.5" />
-            <path d="M3.5 10h17M8 3v4M16 3v4" />
-          </svg>
-          日曆
         </button>
         <button data-tab="report">
           <svg
@@ -2854,8 +2976,18 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "1.5.0";
+      const APP_VERSION = "1.6.0";
       const CHANGELOG = [
+        [
+          "1.6.0",
+          "2026-10-10",
+          [
+            "新增「主頁」：總覽一眼看今日／本週／本月／今年的支出、收入、結餘，各和前一期同長度比較；日、週、月、年各自一頁，一頁一張圖",
+            "底部分頁改成 主頁・明細・報表・帳戶・更多；日曆併進明細（帳目／日曆／統計）",
+            "報表多了「專案」頁；帳戶多了「信用卡」頁（欠款、本月與上月刷卡、一鍵繳卡費）",
+            "打開 App 預設進主頁，可在設定改回明細",
+          ],
+        ],
         [
           "1.5.0",
           "2026-10-10",
@@ -3078,7 +3210,7 @@
         summary: ["cmp", "today", "streak", "budget"], // 摘要卡額外顯示的片段
         numFmt: "full", // "full" | "wan"
         weekStart: 1, // 0 週日 | 1 週一
-        startTab: "list", // list | cal | report | acct
+        startTab: "home", // home | list | report | acct（舊值 cal 會對應到 明細›日曆）
         reportPeriod: "m", // m | y | a
         backupRemind: "weekly", // weekly | monthly | never
         hideZero: false, // 帳戶頁隱藏餘額 0 的帳戶
@@ -3088,7 +3220,7 @@
         accRecent: true, // 帳戶選單最上面加一組「常用」
         defaultCur: "TWD", // 預設幣別
         recMode: "", // 記帳畫面預設："" 自動 | "simple" | "full"（裝置上的切換鍵優先）
-        defaultSub: {}, // 各分頁預設子頁 {list,cal,report,acct}；沒設 = 上次看的
+        defaultSub: {}, // 各分頁預設子頁 {home,list,report,acct}；沒設 = 上次看的
       };
       const pref = (k) =>
         S.meta.prefs && S.meta.prefs[k] !== undefined ? S.meta.prefs[k] : DEFAULT_PREFS[k];
@@ -3204,7 +3336,7 @@
         db: null,
         base: null,
         sample: null, // saved real state while previewing sample
-        tab: "list",
+        tab: "home",
         month: mkey(todayStr()),
         calDay: null,
         rep: { type: "e", period: "m", drill: null },
@@ -3499,7 +3631,10 @@
         render();
         await loadLocal();
         S.mode = "local";
-        S.tab = ["list", "cal", "report", "acct"].includes(pref("startTab")) ? pref("startTab") : "list";
+        // "cal" (stored by older versions) is mapped to 明細›日曆 by render()
+        S.tab = ["home", "list", "cal", "report", "acct"].includes(pref("startTab"))
+          ? pref("startTab")
+          : "home";
         S.rep.period = ["m", "y", "a"].includes(pref("reportPeriod")) ? pref("reportPeriod") : "m";
         rebuild();
         render();
@@ -3611,7 +3746,8 @@
       const FREQ = { d: "每天", w: "每週", m: "每月", y: "每年" };
 
       /* ========== header & tabs ========== */
-      const TITLES = { list: "明細", cal: "日曆", report: "報表", acct: "帳戶", more: "更多" };
+      // "cal" is no longer a tab (日曆 lives under 明細); the key stays so stored values still resolve
+      const TITLES = { home: "主頁", list: "明細", cal: "日曆", report: "報表", acct: "帳戶", more: "更多" };
       document.querySelectorAll(".tabs button").forEach(
         (b) =>
           (b.onclick = () => {
@@ -3805,12 +3941,16 @@
       /* ========== sub-pages: a second-level bar under the header, one job per page ========== */
       // Settings offers a default per tab (pref "defaultSub": {tab: id}); the device remembers the last one
       const SUBPAGES = {
+        home: [
+          { id: "總覽", label: "總覽" },
+          { id: "日", label: "日" },
+          { id: "週", label: "週" },
+          { id: "月", label: "月" },
+          { id: "年", label: "年" },
+        ],
         list: [
           { id: "帳目", label: "帳目" },
-          { id: "摘要", label: "摘要" },
-        ],
-        cal: [
-          { id: "月曆", label: "月曆" },
+          { id: "日曆", label: "日曆", legacy: "cal" }, // the old 日曆 tab; its button keeps data-tab="cal"
           { id: "統計", label: "統計" },
         ],
         report: [
@@ -3818,11 +3958,13 @@
           { id: "走勢", label: "走勢" },
           { id: "資產", label: "資產" },
           { id: "預算", label: "預算" },
+          { id: "專案", label: "專案" },
           { id: "更多", label: "更多" },
         ],
         acct: [
           { id: "帳戶", label: "帳戶" },
           { id: "總覽", label: "總覽" },
+          { id: "信用卡", label: "信用卡" },
         ],
       };
       // the sub-page a tab is on: this session's choice → Settings default → last one on this device → first
@@ -3848,7 +3990,8 @@
         if (!P) return "";
         const cur = curSub(tab);
         return `<div class="subtabs" role="group" aria-label="${TITLES[tab]}的分頁">${P.map(
-          (p) => `<button data-sub="${esc(p.id)}" aria-pressed="${p.id === cur}">${esc(p.label)}</button>`,
+          (p) =>
+            `<button data-sub="${esc(p.id)}"${p.legacy ? ` data-tab="${p.legacy}"` : ""} aria-pressed="${p.id === cur}">${esc(p.label)}</button>`,
         ).join("")}</div>`;
       }
       // swipe left/right on the page to move between sub-pages (left = next, right = previous)
@@ -3899,12 +4042,21 @@
         );
       })();
 
+      // the old 日曆 tab (still stored on some devices as S.tab / startTab) is 明細›日曆 now
+      function tabAlias() {
+        if (S.tab === "cal") {
+          S.tab = "list";
+          setSub("list", "日曆");
+        }
+        if (!TITLES[S.tab] || S.tab === "cal") S.tab = "home";
+      }
       function render() {
+        tabAlias();
         document
           .querySelectorAll(".tabs button")
           .forEach((b) => b.setAttribute("aria-current", String(b.dataset.tab === S.tab)));
         $("#viewTitle").textContent = TITLES[S.tab];
-        const showM = S.tab === "list" || S.tab === "cal" || (S.tab === "report" && S.rep.period !== "a");
+        const showM = S.tab === "list" || (S.tab === "report" && S.rep.period !== "a");
         $("#mswitch").hidden = !showM;
         $("#mToday").hidden = true;
         $("#mLabel").classList.toggle(
@@ -3921,7 +4073,7 @@
           v.innerHTML = `<div class="card empty">載入帳本中…</div>`;
           return;
         }
-        v.innerHTML = { list: viewList, cal: viewCal, report: viewReport, acct: viewAcct, more: viewMore }[
+        v.innerHTML = { home: viewHome, list: viewList, report: viewReport, acct: viewAcct, more: viewMore }[
           S.tab
         ]();
         bindView();
@@ -4032,12 +4184,309 @@
         return Object.values(S.months.get(k) || {});
       }
 
+      /* ========== view: home (主頁 — everything is relative to today; no month switcher) ========== */
+      // per-day and per-year totals (expense / income without the report-excluded categories, no transfers),
+      // the entry count per day, and this year's expense by category — computed once per D and calendar day
+      let homeCache = null;
+      function homeData() {
+        const td = todayStr();
+        if (homeCache && homeCache.D === D && homeCache.td === td) return homeCache;
+        const byDay = {},
+          byYear = {},
+          ytdCat = {};
+        const y0 = td.slice(0, 4) + "-01-01";
+        for (const t of D.tx) {
+          const o = byDay[t.d] || (byDay[t.d] = { e: 0, i: 0, n: 0 });
+          o.n++;
+          if ((t.t !== "e" && t.t !== "i") || D.excl.has(t.c)) continue;
+          const v = sub(t),
+            y = t.d.slice(0, 4);
+          o[t.t] += v;
+          const Y = byYear[y] || (byYear[y] = { e: 0, i: 0 });
+          Y[t.t] += v;
+          if (t.t === "e" && t.d >= y0 && t.d <= td) {
+            const c = t.c || "未分類";
+            ytdCat[c] = (ytdCat[c] || 0) + v;
+          }
+        }
+        homeCache = { D, td, byDay, byYear, ytdCat };
+        return homeCache;
+      }
+      // totals over an inclusive date range, from the per-day table
+      function homeSum(a, b) {
+        const H = homeData().byDay,
+          o = { e: 0, i: 0, n: 0 };
+        for (let d = a; d <= b; d = addDays(d, 1)) {
+          const x = H[d];
+          if (x) {
+            o.e += x.e;
+            o.i += x.i;
+            o.n += x.n;
+          }
+        }
+        return o;
+      }
+      // the four periods (to today) and, for each, the previous period of the same length:
+      // 今日↔昨日, 本週到今天↔上週同幾天, 本月到今天↔上月 1 日到同一天, 今年到今天↔去年 1/1 到同一天
+      function homePeriods() {
+        const td = todayStr(),
+          ws = +pref("weekStart") === 1 ? 1 : 0;
+        const w0 = addDays(td, -((parseD(td).getDay() - ws + 7) % 7));
+        const pm = addMonths(mkey(td), -1),
+          py = String(+td.slice(0, 4) - 1),
+          dd = +td.slice(8);
+        const clampD = (k, d) => k + "-" + pad(Math.min(d, daysIn(k)));
+        return {
+          日: { a: td, b: td, pa: addDays(td, -1), pb: addDays(td, -1), label: "今日", plabel: "昨日" },
+          週: { a: w0, b: td, pa: addDays(w0, -7), pb: addDays(td, -7), label: "本週", plabel: "上週同期" },
+          月: {
+            a: mkey(td) + "-01",
+            b: td,
+            pa: pm + "-01",
+            pb: clampD(pm, dd),
+            label: "本月",
+            plabel: "上月同期",
+          },
+          年: {
+            a: td.slice(0, 4) + "-01-01",
+            b: td,
+            pa: py + "-01-01",
+            pb: clampD(py + td.slice(4, 7), dd),
+            label: "今年",
+            plabel: "去年同期",
+          },
+        };
+      }
+      // ▲▼ of this period's spending against the previous one (more spending = bad); 「—」 when there is nothing to compare with
+      function homeDelta(now, before) {
+        if (!(before > 0)) return `<span class="dl flat">—</span>`;
+        const pc = Math.round(((now - before) / before) * 100);
+        if (Math.abs(pc) < 1) return `<span class="dl flat">持平</span>`;
+        const ratio = now / before;
+        const txt =
+          pc >= 200 ? `×${ratio.toFixed(ratio >= 10 ? 0 : 1)}` : `${pc > 0 ? "▲" : "▼"}${Math.abs(pc)}%`;
+        return `<span class="dl ${pc > 0 ? "bad" : "good"}">${txt}</span>`;
+      }
+      const mdLabel = (d) => `${+d.slice(5, 7)}/${+d.slice(8)}`;
+      const rangeLabel = (a, b) => (a === b ? mdLabel(a) : `${mdLabel(a)}–${mdLabel(b)}`);
+      // the biggest expenses in a date range
+      function homeTop(a, b, n = 5) {
+        const out = [];
+        for (let k = mkey(a); k <= mkey(b); k = addMonths(k, 1))
+          for (const t of monthTx(k))
+            if (t.t === "e" && !D.excl.has(t.c) && t.d >= a && t.d <= b) out.push(t);
+        return out.sort((x, y) => sub(y) - sub(x)).slice(0, n);
+      }
+      function viewHome() {
+        const page = curSub("home");
+        if (!S.hasData && S.mode !== "sample") return noticesHTML() + onboardHTML();
+        let h = subtabsHTML("home") + noticesHTML();
+        const td = todayStr(),
+          P = homePeriods();
+        const wan = pref("numFmt") === "wan";
+        const fmtN = (n, sign) =>
+          wan ? (n < 0 ? "−" : sign && n > 0 ? "+" : "") + short(Math.abs(n)) : money(n, { sign });
+        const netHTML = (net) =>
+          `<span class="num" style="color:${net < 0 ? "var(--exp)" : "var(--ink)"}">${fmtN(net, true)}</span>`;
+        // 「昨日 1,980 ▼37%」 — the previous period's spending and the change against it
+        const cmpLine = (p, cur, prev) =>
+          `<div class="hcmp" title="${p.plabel}：${rangeLabel(p.pa, p.pb).replace(/–/g, " 到 ")}"><span class="k">${p.plabel}</span>${
+            prev.e > 0
+              ? `<b class="num">${fmtN(prev.e)}</b>${homeDelta(cur.e, prev.e)}`
+              : `<span class="dl flat">—</span><span class="muted">沒有支出</span>`
+          }</div>`;
+        // the headline card shared by 日／週／月／年: three numbers + the same-length comparison
+        const headCard = (key, subtitle) => {
+          const p = P[key],
+            cur = homeSum(p.a, p.b),
+            prev = homeSum(p.pa, p.pb);
+          // seven-digit numbers (the 年 page) get the smaller size so three of them fit side by side
+          const tight = !wan && Math.max(cur.e, cur.i, Math.abs(cur.i - cur.e)) >= 1e6;
+          return `<div class="card"><div class="rowhead"><h3>${p.label}</h3><span class="small muted">${subtitle}</span></div>
+    <div class="summary${tight ? " tight" : ""}" style="margin-top:10px"><div><div class="k">支出</div><div class="v num exp">${fmtN(cur.e)}</div></div><div><div class="k">收入</div><div class="v num inc">${fmtN(cur.i)}</div></div><div><div class="k">結餘</div><div class="v">${netHTML(cur.i - cur.e)}</div></div></div>
+    ${cmpLine(p, cur, prev)}</div>`;
+        };
+        const topList = (title, L) =>
+          L.length
+            ? `<section class="day"><div class="dayhead"><span><b>${title}</b></span></div>${L.map((t) => txRow(t)).join("")}</section>`
+            : "";
+        const dt = parseD(td);
+        if (page === "日") {
+          h += headCard("日", `${mdLabel(td)} 週${WD[dt.getDay()]}`);
+          const a = addDays(td, -13);
+          h += `<div class="card chart"><div class="rowhead"><h3>近 14 天每日支出</h3><span class="small muted">${rangeLabel(a, td)}</span></div><div id="hbars" data-kind="days" style="margin-top:8px"></div><div class="small muted">點任一天的長條，就會到那天的明細</div></div>`;
+          const L = monthTx(mkey(td)).filter((t) => t.d === td);
+          h += L.length
+            ? dayGroups(L)
+            : `<div class="card empty">今天還沒有帳。<div class="btnrow" style="justify-content:center;margin-top:12px"><button class="btn sm primary" data-act="addToday">記一筆</button></div></div>`;
+          return h;
+        }
+        if (page === "週") {
+          const p = P.週;
+          h += headCard("週", `${rangeLabel(p.a, addDays(p.a, 6))}，到今天`);
+          h += `<div class="card chart"><div class="rowhead"><h3>本週每日支出</h3><span class="small muted">點長條看那天的帳</span></div><div id="hbars" data-kind="week" style="margin-top:8px"></div></div>`;
+          h += `<div class="card chart"><div class="rowhead"><h3>近 8 週支出</h3><span class="small muted">每週合計，本週到今天</span></div><div id="hbars2" data-kind="weeks" style="margin-top:8px"></div></div>`;
+          h += topList("本週最大幾筆", homeTop(p.a, p.b));
+          return h;
+        }
+        if (page === "月") {
+          const p = P.月;
+          h += headCard("月", `${+td.slice(5, 7)} 月 1 日到今天`);
+          h += `<div class="card chart"><div class="rowhead"><h3>近 12 個月收支</h3><span class="small muted"><span class="inc">■</span> 收入　<span class="exp">■</span> 支出</span></div><div id="htrend" data-kind="months" style="margin-top:8px"></div><div class="small muted">點任一個月的長條，就會到那個月的明細</div></div>`;
+          h += topList("本月最大幾筆", homeTop(p.a, p.b));
+          return h;
+        }
+        if (page === "年") {
+          const p = P.年,
+            cur = homeSum(p.a, p.b);
+          h += headCard("年", `${+td.slice(0, 4)} 年 1 月 1 日到今天`);
+          h += `<div class="card chart"><div class="rowhead"><h3>每年收支</h3><span class="small muted"><span class="inc">■</span> 收入　<span class="exp">■</span> 支出</span></div><div id="htrend" data-kind="years" style="margin-top:8px"></div><div class="small muted">點任一年的長條，就會到那一年的報表</div></div>`;
+          const rows = Object.entries(homeData().ytdCat)
+            .sort((x, y) => y[1] - x[1])
+            .slice(0, 5);
+          h += `<div class="card"><div class="rowhead"><h3>今年花最多的分類</h3><span class="small muted">到今天</span></div>${
+            rows.length
+              ? `<div class="legend" style="margin-top:6px">${rows
+                  .map(
+                    ([n, v]) =>
+                      `<button data-hcat="${esc(n)}"><span class="sw" style="background:${catColor("e", n)}"></span><span class="nm">${esc(n)}</span><span class="lv num">${fmtN(v)}</span><span class="meta"><span class="pc">${cur.e ? ((v / cur.e) * 100).toFixed(1) : "0.0"}%</span></span></button>`,
+                  )
+                  .join(
+                    "",
+                  )}</div><div class="small muted" style="margin-top:6px">點任一列，就會到報表看那個分類</div>`
+              : `<div class="empty">今年還沒有支出</div>`
+          }</div>`;
+          return h;
+        }
+        // 總覽: four compact cards (tap → that period's page), then one slim line
+        const subs = {
+          日: `${mdLabel(td)} 週${WD[dt.getDay()]}`,
+          週: rangeLabel(P.週.a, P.週.b),
+          月: `${+td.slice(5, 7)} 月，到今天`,
+          年: `${+td.slice(0, 4)} 年，到今天`,
+        };
+        for (const key of ["日", "週", "月", "年"]) {
+          const p = P[key],
+            cur = homeSum(p.a, p.b),
+            prev = homeSum(p.pa, p.pb);
+          h += `<button class="card hcard" data-hp="${key}" aria-label="${p.label}收支，看${key}的頁面">
+    <div class="hh"><span class="ht">${p.label}</span><span class="small muted">${subs[key]}</span><span class="chev">›</span></div>
+    <div class="hbody"><div class="hbig"><span class="k">支出</span><span class="num exp">${fmtN(cur.e)}</span></div><div class="hside"><span class="k">收入</span><b class="num inc">${fmtN(cur.i)}</b><span class="k">結餘</span>${netHTML(cur.i - cur.e)}</div></div>
+    ${cmpLine(p, cur, prev)}</button>`;
+        }
+        const n = (homeData().byDay[td] || {}).n || 0;
+        h += `<div class="card slim"><div class="meta-line"><span class="st"${n ? "" : ' style="overflow:visible"'}>${
+          n
+            ? `連續記帳 <b>${D.streak}</b> 天 · 今天 <b>${n}</b> 筆`
+            : `${D.streak ? `連續記帳 <b>${D.streak}</b> 天 · ` : ""}<button class="tapline" data-act="addToday">今天還沒記帳，記一筆 ›</button>`
+        }</span></div></div>`;
+        return h;
+      }
+      // 主頁 charts: 日／週 use single-series bars with the trend chart's geometry; 月／年 reuse drawTrend
+      function drawHome() {
+        const td = todayStr();
+        const tr = $("#htrend");
+        if (tr) {
+          const ks = [];
+          if (tr.dataset.kind === "years") {
+            const y0 = +(D.first || td).slice(0, 4),
+              y1 = +td.slice(0, 4);
+            for (let y = y0; y <= y1; y++) ks.push(String(y));
+            drawTrend(tr, {
+              ks,
+              yearly: true,
+              label: (k) => "'" + k.slice(2),
+              cat: null,
+              cur: td.slice(0, 4),
+            });
+          } else {
+            for (let i = 11; i >= 0; i--) ks.push(addMonths(mkey(td), -i));
+            drawTrend(tr, { ks, yearly: false, label: (k) => +k.slice(5) + "月", cat: null, cur: mkey(td) });
+          }
+        }
+        for (const el of document.querySelectorAll("#hbars,#hbars2")) {
+          const kind = el.dataset.kind,
+            H = homeData().byDay,
+            items = [];
+          if (kind === "days") {
+            for (let i = 13; i >= 0; i--) {
+              const d = addDays(td, -i);
+              items.push({
+                d,
+                v: (H[d] || {}).e || 0,
+                label: String(+d.slice(8)),
+                cur: d === td,
+                name: mdLabel(d),
+              });
+            }
+          } else if (kind === "week") {
+            const w0 = homePeriods().週.a;
+            for (let i = 0; i < 7; i++) {
+              const d = addDays(w0, i);
+              items.push({
+                d,
+                v: (H[d] || {}).e || 0,
+                label: "週" + WD[parseD(d).getDay()],
+                cur: d === td,
+                future: d > td,
+                name: mdLabel(d),
+              });
+            }
+          } else {
+            const w0 = homePeriods().週.a;
+            for (let i = 7; i >= 0; i--) {
+              const a = addDays(w0, -7 * i),
+                b = i ? addDays(a, 6) : td;
+              items.push({ v: homeSum(a, b).e, label: mdLabel(a), cur: i === 0, name: rangeLabel(a, b) });
+            }
+          }
+          drawHBars(el, items);
+        }
+      }
+      // one expense bar per item ({label, v, cur, future, d, name}); a bar with `d` is tappable (→ 明細›日曆 on that day)
+      function drawHBars(el, items) {
+        const W = Math.max(300, el.clientWidth),
+          H = 200,
+          L = 44,
+          B = 26,
+          T = 10,
+          pw = W - L - 4,
+          ph = H - B - T;
+        const n = items.length,
+          bw = pw / n,
+          w = Math.min(26, bw * 0.6);
+        const top = Math.max(...items.map((it) => it.v));
+        // an empty range still gets whole-number ticks (0–6), plus a note in the middle of the plot
+        const sc = niceScale(Math.max(6, top)),
+          mx = sc.top;
+        // label every k-th bar so the texts never touch (the current one is always labelled)
+        const tw = (t) => [...String(t)].reduce((a, c) => a + (c > "\x7f" ? 11.5 : 6.6), 0);
+        const every = Math.max(1, Math.ceil((Math.max(...items.map((it) => tw(it.label))) + 6) / bw));
+        const curIdx = items.findIndex((it) => it.cur);
+        let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+        for (let i = 0; i <= sc.n; i++) {
+          const y = T + ph - (ph * i) / sc.n;
+          s += `<line class="grid" x1="${L}" x2="${W - 4}" y1="${y}" y2="${y}"/>${top > 0 || i === 0 ? `<text x="${L - 6}" y="${y + 4}" text-anchor="end">${short(sc.step * i)}</text>` : ""}`;
+        }
+        items.forEach((it, i) => {
+          const x = L + i * bw,
+            hh = (it.v / mx) * ph;
+          const tip = `<title>${esc(it.name)}${it.future ? "（還沒到）" : " 支出 " + money(it.v)}</title>`;
+          if (!it.future && it.v > 0)
+            s += `<rect x="${x + bw / 2 - w / 2}" y="${T + ph - hh}" width="${w}" height="${hh}" rx="2" fill="var(--exp)" opacity="${it.cur ? 1 : 0.7}"/>`;
+          s += `<rect class="trendhit"${it.d && !it.future ? ` data-hday="${it.d}"` : ""} x="${x}" y="${T}" width="${bw}" height="${ph + B}" fill="${it.cur ? "var(--accent)" : "transparent"}" style="opacity:${it.cur ? "var(--hilite)" : 0}">${tip}</rect>`;
+          if (it.cur || ((n - 1 - i) % every === 0 && (curIdx < 0 || Math.abs(i - curIdx) >= every)))
+            s += `<text x="${x + bw / 2}" y="${H - 8}" text-anchor="middle" ${it.cur ? 'style="fill:var(--ink);font-weight:600"' : it.future ? 'style="opacity:.55"' : ""}>${esc(it.label)}</text>`;
+        });
+        if (!(top > 0))
+          s += `<text x="${L + pw / 2}" y="${T + ph / 2}" text-anchor="middle" style="font-size:13px;font-family:var(--f-body)">這段期間沒有支出</text>`;
+        el.innerHTML = s + "</svg>";
+      }
+
       /* ========== view: list ========== */
-      function viewList() {
-        const k = S.month,
-          M = D.byMonth[k] || { e: 0, i: 0, n: 0 },
-          list = monthTx(k);
-        let h = "";
+      // the one notice worth showing right now (sample mode, cloud migration, install hint, backup due,
+      // recurring entries due) — shown on 主頁 and 明細; the next one appears once this is handled
+      function noticesHTML() {
         const notes = [];
         if (S.mode === "sample")
           notes.push(
@@ -4073,94 +4522,37 @@
                 .join("、"),
             )}${due.length > 3 ? "…" : ""}</span><button class="btn sm primary" data-act="runDue">產生</button></div>`,
           );
-        // show only the most important notice; the next one appears once this is handled
-        if (notes.length) h += notes[0];
+        return notes.length ? notes[0] : "";
+      }
+      function viewList() {
+        const k = S.month,
+          list = monthTx(k);
+        let h = noticesHTML();
         if (!S.hasData && S.mode !== "sample") {
           h += onboardHTML();
           return h;
         }
-        // sub-pages: 帳目 (status row + the day list) / 摘要 (numbers, budget, biggest entries)
+        // sub-pages: 帳目 (status row + the day list) / 日曆 (month grid + selected day) / 統計 (the month's pattern)
+        // — the old 摘要 page is gone: the 主頁 covers it, the budget bar lives in 報表›預算
         const page = curSub("list");
         h = subtabsHTML("list") + h;
+        if (page === "日曆" || page === "統計") {
+          lazyRest = null;
+          return h + viewCal(page);
+        }
         const td = todayStr(),
           isCur = k === mkey(td);
-        const wan = pref("numFmt") === "wan";
-        const fmtN = (n, sign) =>
-          wan ? (n < 0 ? "−" : sign && n > 0 ? "+" : "") + short(Math.abs(n)) : money(n, { sign });
         const show = new Set(pref("summary") || []);
         // transient list filter (type / account / main category)
         const F = listFilter(),
           active = listFilterActive();
         const flist = active ? list.filter(listFilterMatch) : list;
-        let E = M.e,
-          I = M.i;
-        if (active) {
-          E = 0;
-          I = 0;
-          for (const t of flist) {
-            if (D.excl.has(t.c)) continue;
-            if (t.t === "e") E += sub(t);
-            if (t.t === "i") I += sub(t);
-          }
-        }
-        const net = I - E;
-        // same days of the previous month, for a fair comparison mid-month → small pill next to 支出
-        let cmp = "";
-        if (show.has("cmp") && !active) {
-          const pk = addMonths(k, -1),
-            cut = td.slice(8);
-          let pe = 0;
-          for (const t of monthTx(pk))
-            if (t.t === "e" && !D.excl.has(t.c) && (!isCur || t.d.slice(8) <= cut)) pe += sub(t);
-          if (pe > 0 && M.e > 0) {
-            const pc = Math.round(((M.e - pe) / pe) * 100);
-            const txt =
-              Math.abs(pc) < 1
-                ? "持平"
-                : pc >= 200
-                  ? "×" + (M.e / pe).toFixed(M.e / pe >= 10 ? 0 : 1)
-                  : (pc > 0 ? "▲" : "▼") + Math.abs(pc) + "%";
-            cmp = `<span class="cmp dl ${Math.abs(pc) < 1 ? "flat" : pc > 0 ? "bad" : "good"}" title="${isCur ? `和上月同期（1 日到 ${+cut} 日）相比` : "和上個月相比"}">${txt}</span>`;
-          }
-        }
         const pill = (key, label) =>
           `<span class="chip">${esc(label)}<button class="x" data-act="lfclear" data-key="${key}" aria-label="清除${esc(label)}">×</button></span>`;
         const pills = active
           ? `<div class="fpills">${F.t !== "all" ? pill("t", { e: "支出", i: "收入", x: "轉帳" }[F.t]) : ""}${F.acc ? pill("acc", dispAcc(F.acc)) : ""}${F.c ? pill("c", F.c) : ""}</div>`
           : "";
         const days = new Set(list.map((t) => t.d)).size;
-        if (page === "摘要") {
-          lazyRest = null;
-          h += `<div class="card"><div class="summary">
-        <div><div class="k">支出${cmp}</div><div class="v num exp">${fmtN(E)}</div></div>
-    <div><div class="k">收入</div><div class="v num inc">${fmtN(I)}</div></div>
-    <div><div class="k">結餘</div><div class="v num" style="color:${net < 0 ? "var(--exp)" : "var(--ink)"}">${fmtN(net, true)}</div></div></div>`;
-          // budget: one 8px bar with a 「今天應該在這」 tick, one line of text
-          const bud = S.meta.budgets?.total || 0;
-          if (bud && show.has("budget") && !active) {
-            const p = M.e / bud;
-            const day = isCur ? +td.slice(8) : daysIn(k),
-              pace = day / daysIn(k);
-            const left = bud - M.e;
-            h += `<div style="margin-top:12px"><div class="bar ${p > 1 ? "over" : p >= 0.9 ? "warn" : ""}" title="已過本月 ${Math.round(pace * 100)}%，已用預算 ${Math.round(p * 100)}%"><i style="width:${Math.min(100, p * 100).toFixed(1)}%"></i>${isCur ? `<s style="left:${(pace * 100).toFixed(1)}%"></s>` : ""}</div>
-    <div class="budline"><span>預算 <b class="num">${fmtN(bud)}</b></span><span class="num ${p > 1 ? "exp" : ""}">${p > 1 ? "超支 " + fmtN(M.e - bud) : "剩 " + fmtN(left)}${isCur && p <= 1 ? `<span class="muted"> · 日均可用 ${fmtN(left / Math.max(1, daysIn(k) - day + 1))}</span>` : ""}</span></div></div>`;
-          }
-          // one line of counts; with a filter on, what it matched and the pills to clear it
-          h += `<div class="meta-line"><span class="st">${
-            active
-              ? `篩選中：符合 <b>${flist.length}</b> 筆（本月共 ${list.length} 筆）`
-              : list.length
-                ? `本月 <b>${list.length}</b> 筆 · <b>${days}</b> 天有記帳`
-                : "這個月沒有帳"
-          }</span></div>${pills}</div>`;
-          const big = flist
-            .filter((t) => t.t === "e" && !D.excl.has(t.c))
-            .sort((a, b) => sub(b) - sub(a))
-            .slice(0, 5);
-          if (big.length)
-            h += `<section class="day"><div class="dayhead"><span><b>本月最大幾筆</b></span></div>${big.map((t) => txRow(t)).join("")}</section>`;
-          return h;
-        }
         // status line: today / streak on the current month, a count on other months
         const parts = [];
         let plain = true;
@@ -4508,8 +4900,8 @@
         });
       }
 
-      /* ========== view: calendar ========== */
-      function viewCal() {
+      /* ========== view: calendar (明細›日曆 and 明細›統計; viewList draws the sub-page bar) ========== */
+      function viewCal(page = "日曆") {
         const k = S.month,
           list = monthTx(k),
           by = {};
@@ -4534,8 +4926,8 @@
         const span = isCur ? +td.slice(8) : n;
         const days = Object.values(by).filter((o) => o.e > 0).length;
         const avg = M.e / Math.max(1, span);
-        let h = subtabsHTML("cal");
-        if (curSub("cal") === "統計") {
+        let h = "";
+        if (page === "統計") {
           // 統計: the three numbers, the weekday pattern, the month's biggest entries
           const big = list
             .filter((t) => t.t === "e" && !D.excl.has(t.c))
@@ -4724,6 +5116,10 @@
           h += `</div>`;
           return h;
         }
+        if (page === "專案") {
+          h += projectCardsHTML(fmtN);
+          return h;
+        }
         if (page === "更多") {
           h += moreChartsHTML();
           return h;
@@ -4868,16 +5264,16 @@
           return o;
         });
       }
-      function drawTrend() {
-        const el = $("#trend");
+      // el / TS default to the report's trend chart; 主頁 passes its own container and spec ({ks, yearly, label, cur})
+      function drawTrend(el = $("#trend"), TS = null) {
         if (!el) return;
         const W = Math.max(300, el.clientWidth),
           H = 210,
           L = 44,
           B = 26,
           T = 10;
-        const TS = trendSpec(),
-          ks = TS.ks,
+        TS = TS || trendSpec();
+        const ks = TS.ks,
           n = ks.length;
         const data = trendData(TS);
         const sc = niceScale(Math.max(1, ...data.map((d) => Math.max(d.e, d.i)))),
@@ -4885,7 +5281,7 @@
         const pw = W - L - 4,
           ph = H - B - T,
           bw = pw / n;
-        const curKey = TS.yearly ? S.month.slice(0, 4) : S.month,
+        const curKey = TS.cur !== undefined ? TS.cur : TS.yearly ? S.month.slice(0, 4) : S.month,
           curIdx = ks.indexOf(curKey);
         // x labels: every bar when there is room, otherwise every 2nd/3rd… (last one always)
         const every = Math.max(1, Math.ceil(30 / bw));
@@ -4981,6 +5377,57 @@
         el.innerHTML =
           s +
           `</svg><div class="small muted" style="margin-top:4px">最新 <b class="num" style="color:var(--ink)">${money(last.v)}</b>（${last.k.replace("-", "/")}）</div>`;
+      }
+
+      // ----- 專案 (報表 sub-page): one card per project; the same numbers openProjects shows, computed once per D -----
+      let projCache = null;
+      function projectStats() {
+        if (projCache && projCache.D === D) return projCache.stats;
+        const st = {};
+        for (const t of D.tx) {
+          if (!t.p) continue;
+          const o = st[t.p] || (st[t.p] = { tot: 0, n: 0, from: t.d, to: t.d, cats: {} });
+          o.n++;
+          if (t.d < o.from) o.from = t.d;
+          if (t.d > o.to) o.to = t.d;
+          if (t.t === "e") {
+            const v = sub(t);
+            o.tot += v;
+            o.cats[t.c || "未分類"] = (o.cats[t.c || "未分類"] || 0) + v;
+          } else if (t.t === "i") o.tot -= sub(t);
+        }
+        projCache = { D, stats: st };
+        return st;
+      }
+      function projectCardsHTML(fmtN) {
+        const P = S.meta.projects || (S.meta.projects = []);
+        const st = projectStats();
+        // projects that only exist in entries (imports) are listed too, like openProjects does
+        for (const n in st) if (!P.find((p) => p.n === n)) P.push({ n });
+        const list = P.map((p, i) => ({ p, i, s: st[p.n] })).sort((a, b) => {
+          if (!!a.p.done !== !!b.p.done) return a.p.done ? 1 : -1;
+          return (b.s ? b.s.to : "") < (a.s ? a.s.to : "") ? -1 : 1;
+        });
+        let h = `<div class="rowhead acbar"><span class="small muted">${list.length ? `${list.length} 個專案` : "還沒有專案"}</span><button class="btn sm" data-act="projects">新增／管理</button></div>`;
+        if (!list.length)
+          return (
+            h +
+            `<div class="card empty">專案可以把一趟旅行、一次裝修的花費集中看，例如「東京五日」「客廳裝修」。<br>記帳時在備註旁選專案，這裡就會出現。</div>`
+          );
+        const dl = (d) => d.replace(/-0?/g, "/"); // 2024-03-01 → 2024/3/1
+        for (const { p, i, s } of list) {
+          const cats = s ? Object.entries(s.cats).sort((a, b) => b[1] - a[1]) : [];
+          const top = cats.slice(0, 4),
+            rest = cats.slice(4).reduce((a, c) => a + c[1], 0);
+          if (rest) top.push(["其他分類", rest]);
+          const mx = Math.max(1, ...top.map((c) => c[1]));
+          h += `<button class="card pcard${p.done ? " done" : ""}" data-proj="${i}" aria-label="專案 ${esc(p.n)}">
+    <div class="rowhead"><h3>${esc(p.n)}${p.done ? ' <span class="small muted">已結束</span>' : ""}</h3><span class="num exp" style="font-weight:600">${s ? fmtN(s.tot) : "—"}</span></div>
+    <div class="small muted">${s ? `${s.n.toLocaleString()} 筆 · ${dl(s.from)}${s.to !== s.from ? " ～ " + dl(s.to) : ""}` : "還沒有帳"}</div>
+    ${top.length ? `<div class="blist pbars">${top.map(([c, v]) => `<div><div class="bh"><span>${esc(c)}</span><span class="num">${fmtN(v)}</span></div><div class="bar"><i style="width:${((v / mx) * 100).toFixed(1)}%;background:${c === "其他分類" ? "var(--line)" : catColor("e", c)}"></i></div></div>`).join("")}</div>` : ""}
+    </button>`;
+        }
+        return h;
       }
 
       // ----- 更多圖表 (its own sub-page: 分類逐月 / 星期分布 / 帳戶分布, picked with a select) -----
@@ -5175,6 +5622,32 @@
           if (cards.length) {
             const due = cards.filter((a) => a.b < 0).reduce((s, a) => s + a.b, 0);
             h += `<div class="card"><div class="rowhead"><h3>信用卡待繳</h3><b class="num exp" style="font-size:17px">${fmtN(-due)}</b></div><div class="small muted" style="margin-top:4px">${due ? `信用卡群組裡餘額為負的 ${cards.filter((a) => a.b < 0).length} 個帳戶合計` : "信用卡目前沒有未繳的金額"}</div></div>`;
+          }
+          return h;
+        }
+        if (!sort && curSub("acct") === "信用卡") {
+          // 信用卡: one card per credit card — what it owes, this and last month's spending on it, 繳卡費
+          const cards = acc.filter((a) => a.group === "信用卡" && (showHid || !a.hidden));
+          if (!cards.length)
+            return (
+              h +
+              `<div class="card empty">還沒有「信用卡」群組的帳戶。<br>新增帳戶時把群組選成信用卡，就會出現在這裡。<div class="btnrow" style="justify-content:center;margin-top:12px"><button class="btn sm primary" data-act="addAcc">新增帳戶</button></div></div>`
+            );
+          const td = todayStr(),
+            k = mkey(td),
+            pk = addMonths(k, -1);
+          const spend = (name, mk) => {
+            let s = 0;
+            for (const t of monthTx(mk)) if (t.t === "e" && t.acc === name && !D.excl.has(t.c)) s += sub(t);
+            return s;
+          };
+          const due = cards.filter((a) => a.b < 0).reduce((s, a) => s + a.b, 0);
+          h += `<div class="card slim"><div class="meta-line"><span class="st">${cards.length} 張卡 · 待繳合計 <b class="${due ? "exp" : ""}">${fmtN(-due)}</b></span></div></div>`;
+          for (const a of cards) {
+            const cur = spend(a.name, k),
+              prev = spend(a.name, pk);
+            h += `<div class="card ccard${a.hidden ? " dim" : ""}"><div class="rowhead"><button class="ccname" data-acc="${esc(a.name)}">${esc(dispAcc(a.name))}${a.hidden ? `<small class="muted"> 已隱藏</small>` : ""} <span class="chev">›</span></button><button class="btn sm" data-act="payCard" data-n="${esc(a.name)}">繳卡費</button></div>
+    <div class="summary" style="margin-top:8px"><div><div class="k">${a.b < 0 ? "欠款" : "餘額"}</div><div class="v num${a.b < 0 ? " exp" : ""}">${fmtN(Math.abs(a.b))}</div></div><div><div class="k">本月刷卡</div><div class="v num">${fmtN(cur)}</div></div><div><div class="k">上月刷卡</div><div class="v num">${fmtN(prev)}</div></div></div></div>`;
           }
           return h;
         }
@@ -5411,7 +5884,38 @@
         const v = $("#view");
         $("#fab").hidden = S.tab === "report" || S.tab === "acct";
         v.onclick = (e) => {
+          // 主頁›日／週 bar: that day in 明細›日曆
+          const hd = e.target.closest("[data-hday]");
+          if (hd) {
+            S.month = mkey(hd.dataset.hday);
+            S.calDay = hd.dataset.hday;
+            S.tab = "list";
+            setSub("list", "日曆");
+            render();
+            window.scrollTo(0, 0);
+            return;
+          }
           const hit = e.target.closest("[data-month]");
+          if (hit && S.tab === "home") {
+            // 主頁›月 bar: that month's 明細; 主頁›年 bar: that year's 報表
+            const mk = hit.dataset.month,
+              td = todayStr();
+            if (mk.length === 4) {
+              S.rep.period = "y";
+              S.rep.drill = null;
+              S.month = mk === td.slice(0, 4) ? mkey(td) : mk + "-12";
+              S.tab = "report";
+              setSub("report", "分類");
+            } else {
+              S.month = mk;
+              S.tab = "list";
+              setSub("list", "帳目");
+            }
+            S.calDay = null;
+            render();
+            window.scrollTo(0, 0);
+            return;
+          }
           if (hit) {
             // trend bar: a year bar (全部) opens that year, a month bar in 年 mode opens that month
             const mk = hit.dataset.month,
@@ -5434,6 +5938,31 @@
             // sub-page bar: only the page changes; month, filter and drill stay as they are
             setSub(S.tab, b.dataset.sub);
             render();
+            return;
+          }
+          if (b.dataset.hp) {
+            // 主頁›總覽 card → that period's page
+            setSub("home", b.dataset.hp);
+            render();
+            window.scrollTo(0, 0);
+            return;
+          }
+          if (b.dataset.hcat) {
+            // 主頁›年 top category → 報表›分類 for this year, drilled into it
+            S.rep.type = "e";
+            S.rep.period = "y";
+            S.rep.drill = b.dataset.hcat;
+            S.month = mkey(todayStr());
+            S.tab = "report";
+            setSub("report", "分類");
+            render();
+            window.scrollTo(0, 0);
+            return;
+          }
+          if (b.dataset.proj !== undefined) {
+            // 報表›專案 card → the existing project sheet (its parent refresh is the page itself)
+            const p = (S.meta.projects || [])[+b.dataset.proj];
+            if (p) openProject(p, { refresh: () => render() });
             return;
           }
           const open = v.querySelector(".txw.open");
@@ -5563,6 +6092,8 @@
             settings: openSettings,
             addAcc: () => openAccount(null),
             transfer: () => openRecord(null, { t: "x" }),
+            // 帳戶›信用卡: a transfer into that card
+            payCard: () => openRecord(null, { t: "x", to: b.dataset.n }),
             addOn: () => openRecord(null, { d: b.dataset.day }),
             // list filter
             lfilter: () => {
@@ -5717,6 +6248,7 @@
         drawMore();
         drawCalWD();
         drawAcctBars();
+        drawHome();
       }
       window.addEventListener("resize", () => {
         if ($("#view .chart")) drawCharts();
@@ -7924,11 +8456,10 @@
             `<label class="switch"><input type="checkbox" data-t="${name}" ${on ? "checked" : ""}><i></i></label>`;
           const link = (more, label, hint) =>
             `<div class="srow"><button class="link" data-l="${more}"><span class="sl">${label}${hint ? `<small>${hint}</small>` : ""}</span><span class="chev">›</span></button></div>`;
+          // round 4: the 摘要 page is gone (主頁 covers it), so only the 帳目 status-row pieces remain
           const SUM = [
-            ["cmp", "和上月比較"],
             ["today", "今天花了多少"],
             ["streak", "連續記帳天數"],
-            ["budget", "預算進度"],
           ];
           const sum = new Set(pref("summary") || []);
           const accSel = `<select class="inp" data-s="accMode" aria-label="預設帳戶"><option value="byCategory" ${pref("accMode") === "byCategory" ? "selected" : ""}>依分類自動選</option><option value="last" ${pref("accMode") === "last" ? "selected" : ""}>上次用的</option>${accs.map((g) => `<optgroup label="${esc(g.group)}">${g.accounts.map((a) => `<option value="acc:${esc(a.name)}" ${pref("accMode") === "default" && pref("defaultAcc") === a.name ? "selected" : ""}>固定用 ${esc(dispAcc(a.name))}</option>`).join("")}</optgroup>`).join("")}</select>`;
@@ -7981,12 +8512,12 @@
           select(
             "startTab",
             [
+              ["home", "主頁"],
               ["list", "明細"],
-              ["cal", "日曆"],
               ["report", "報表"],
               ["acct", "帳戶"],
             ],
-            pref("startTab"),
+            pref("startTab") === "cal" ? "list" : pref("startTab"),
           ),
         ) +
           row(
@@ -7999,11 +8530,11 @@
               ],
               pref("weekStart"),
             ),
-            "影響日曆的排法",
+            "影響日曆的排法，以及主頁「本週」從哪天算",
           ) +
           colrow(
             "各分頁預設子頁",
-            `<div class="grid2">${["list", "cal", "report", "acct"]
+            `<div class="grid2">${["home", "list", "report", "acct"]
               .map((t) => {
                 const cur = (pref("defaultSub") || {})[t] || "";
                 return `<label class="field"><span class="flabel">${TITLES[t]}</span><select class="inp" data-sub-t="${t}" aria-label="${TITLES[t]}預設子頁"><option value="" ${cur === "" ? "selected" : ""}>上次看的</option>${(SUBPAGES[t] || []).map((p2) => `<option value="${esc(p2.id)}" ${cur === p2.id ? "selected" : ""}>${esc(p2.label)}</option>`).join("")}</select></label>`;
@@ -8093,11 +8624,11 @@
       ${grp(
         "view",
         "明細與報表",
-        "摘要顯示哪些、金額寫法、報表預設期間",
+        "帳目狀態列顯示哪些、金額寫法、報表預設期間",
         colrow(
-          "摘要還要顯示",
+          "帳目狀態列顯示",
           `<div class="chips tall">${SUM.map(([k, l]) => `<button class="chip" data-sum="${k}" aria-pressed="${sum.has(k)}">${l}</button>`).join("")}</div>`,
-          "支出、收入、結餘一定會顯示",
+          "明細「帳目」最上面那一行；本月收支與比較在主頁",
         ) +
           row(
             "大金額的寫法",
