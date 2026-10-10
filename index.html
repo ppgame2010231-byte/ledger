@@ -3214,6 +3214,142 @@
       .fpick .num {
         font-weight: 600;
       }
+      /* 對照 */
+      .bb {
+        position: relative;
+        display: inline-block;
+        width: 56px;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--surface2);
+        margin-left: auto;
+        flex: none;
+      }
+      .bb::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: -2px;
+        bottom: -2px;
+        width: 1px;
+        background: var(--line);
+      }
+      .bb i {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        border-radius: 3px;
+      }
+      .bb i.bad {
+        background: var(--exp);
+      }
+      .bb i.good {
+        background: var(--inc);
+      }
+      .cmpbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .cmpbar select {
+        flex: 1;
+        min-width: 0;
+        height: 40px;
+        font-size: 14px;
+        padding: 0 10px;
+      }
+      .cmpbar .seg button {
+        padding: 6px 10px;
+        font-size: 13.5px;
+        white-space: nowrap;
+      }
+      .story .st {
+        font-size: 14.5px;
+        line-height: 1.55;
+      }
+      .story .tapline {
+        font-size: inherit;
+        padding: 0;
+        min-height: 0;
+      }
+      .plegend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 12px;
+        align-items: center;
+        margin-top: 6px;
+        font-size: 12.5px;
+        color: var(--muted);
+      }
+      .plegend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .plegend i {
+        display: inline-block;
+        width: 16px;
+        height: 3px;
+        border-radius: 2px;
+      }
+      .plegend i.dash {
+        height: 0;
+        border-top: 2px dashed;
+      }
+      .plegend i.dot {
+        height: 0;
+        border-top: 2px dotted;
+      }
+      .plegend i.band {
+        height: 10px;
+        background: var(--accent);
+        opacity: 0.2;
+      }
+      .plegend .tapline {
+        margin-left: auto;
+        font-size: 13px;
+      }
+      .heat {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .heat .hrow {
+        display: grid;
+        grid-template-columns: 52px repeat(var(--n), minmax(0, 1fr)) 44px;
+        gap: 3px;
+        align-items: center;
+      }
+      .heat .hl {
+        font-size: 12px;
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .heat .hm {
+        font-size: 10.5px;
+        color: var(--muted);
+        text-align: center;
+        font-family: var(--f-num);
+      }
+      .heat .hm.cur {
+        color: var(--ink);
+        font-weight: 700;
+      }
+      .heat .hv {
+        font-size: 11px;
+        color: var(--muted);
+        text-align: right;
+      }
+      .heat .hc {
+        height: 22px;
+        border-radius: 4px;
+        background: color-mix(in srgb, var(--exp) calc(var(--hf, 0) * 100%), var(--surface2));
+      }
+      .heat .head span:first-child {
+        grid-column: 1;
+      }
       .rrow .nm small {
         color: var(--muted);
         font-size: 12px;
@@ -3353,8 +3489,18 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "2.0.0";
+      const APP_VERSION = "2.1.0";
       const CHANGELOG = [
+        [
+          "2.1.0",
+          "2026-10-10",
+          [
+            "對照功能：每筆支出分成 固定／日常／大額，和「典型月」（近 6 個月中位數）比，而不是只和上個月比",
+            "主頁›月 新增「發生了什麼」一句話（差多少、差在哪幾個分類、哪幾筆大額）和「本月進度」累積曲線（本月／上月／典型月／常見範圍）",
+            "報表新增「對照」頁：分類斜率圖、固定／日常／大額 12 個月堆疊、分類 × 月份熱力圖、本月大額清單；基準可選 典型月／上月／去年同月",
+            "主頁 月卡片的比較改用典型月同日，所有比較加上 ±100% 小橫條",
+          ],
+        ],
         [
           "2.0.0",
           "2026-10-10",
@@ -4379,6 +4525,7 @@
         ],
         report: [
           { id: "分類", label: "分類" },
+          { id: "對照", label: "對照" },
           { id: "走勢", label: "走勢" },
           { id: "資產", label: "資產" },
           { id: "預算", label: "預算" },
@@ -4480,17 +4627,18 @@
           .querySelectorAll(".tabs button")
           .forEach((b) => b.setAttribute("aria-current", String(b.dataset.tab === S.tab)));
         $("#viewTitle").textContent = TITLES[S.tab];
-        const showM = S.tab === "list" || (S.tab === "report" && S.rep.period !== "a");
+        const cmpPage = S.tab === "report" && curSub("report") === "對照"; // always a month
+        const showM = S.tab === "list" || (S.tab === "report" && (S.rep.period !== "a" || cmpPage));
         $("#mswitch").hidden = !showM;
         $("#mToday").hidden = true;
         $("#mLabel").classList.toggle(
           "off",
-          showM && S.month !== mkey(todayStr()) && !(S.tab === "report" && S.rep.period !== "m"),
+          showM && S.month !== mkey(todayStr()) && !(S.tab === "report" && S.rep.period !== "m" && !cmpPage),
         );
         $("#hSearch").hidden = S.tab !== "list";
-        if (S.tab === "report" && S.rep.period === "y")
+        if (S.tab === "report" && S.rep.period === "y" && !cmpPage)
           $("#mLabel").textContent = S.month.slice(0, 4) + " 年";
-        else if (S.tab === "report" && S.rep.period === "a") $("#mLabel").textContent = "全部";
+        else if (S.tab === "report" && S.rep.period === "a" && !cmpPage) $("#mLabel").textContent = "全部";
         else $("#mLabel").textContent = S.month.replace("-", "/");
         const v = $("#view");
         if (S.mode === "loading" || (S.mode === "cloud" && !S.ready)) {
@@ -4723,6 +4871,479 @@
             if (t.t === "e" && !D.excl.has(t.c) && t.d >= a && t.d <= b) out.push(t);
         return out.sort((x, y) => sub(y) - sub(x)).slice(0, n);
       }
+      /* ========== 對照 (2.1): one baseline engine, shared by 主頁›月, the 主頁 cards and 報表›對照 ==========
+         "典型月" = the median of the 6 full months before the month in view, day by day (cumulative), so a
+         month is judged against how a month usually unfolds, not against one neighbour that may have been odd.
+         Every expense is one of: 固定 (same category／子分類／amount in ≥4 of those 6 months), 大額 (a single
+         entry ≥ 2.5× that category's usual monthly total, and ≥ 3,000), or 日常 (everything else).
+         Curves and comparisons use 日常＋固定 by default; 大額 are listed separately. */
+      const cmpCache = new Map(); // month key → data (cleared whenever D is rebuilt)
+      function cmpData(cm = mkey(todayStr())) {
+        const hit = cmpCache.get(cm);
+        if (hit && hit.D === D) return hit;
+        if (cmpCache.size && [...cmpCache.values()][0].D !== D) cmpCache.clear();
+        const months = [];
+        for (let i = 12; i >= 0; i--) months.push(addMonths(cm, -i));
+        const baseKs = months.slice(6, 12); // the 6 full months before cm
+        const mset = new Set(months);
+        const txs = {};
+        for (const k of months) txs[k] = [];
+        for (const t of D.tx) {
+          if (t.t !== "e" || D.excl.has(t.c)) continue;
+          const k = mkey(t.d);
+          if (mset.has(k)) txs[k].push(t);
+        }
+        const med = (arr) => {
+          const a = arr.filter((x) => isFinite(x)).sort((x, y) => x - y);
+          if (!a.length) return 0;
+          const m = a.length >> 1;
+          return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+        };
+        const quant = (arr, q) => {
+          const a = arr.filter((x) => isFinite(x)).sort((x, y) => x - y);
+          if (!a.length) return 0;
+          const pos = (a.length - 1) * q,
+            lo = Math.floor(pos),
+            hi = Math.ceil(pos);
+          return a[lo] + (a[hi] - a[lo]) * (pos - lo);
+        };
+        const keyOf = (t) => `${t.c}|${t.s || ""}|${Math.round(sub(t))}`;
+        // 固定: the same key in at least 4 of the 6 base months
+        const keyMonths = {};
+        for (const k of baseKs)
+          for (const t of txs[k]) (keyMonths[keyOf(t)] || (keyMonths[keyOf(t)] = new Set())).add(k);
+        const fixedKeys = new Set(
+          Object.entries(keyMonths)
+            .filter(([, s]) => s.size >= 4)
+            .map(([k]) => k),
+        );
+        // each category's usual monthly total (median over the base months) → the 大額 threshold
+        const catTot = {};
+        for (const k of baseKs)
+          for (const t of txs[k]) {
+            const c = t.c || "未分類";
+            (catTot[c] || (catTot[c] = {}))[k] = (catTot[c][k] || 0) + sub(t);
+          }
+        const catMed = {};
+        for (const c in catTot) catMed[c] = med(baseKs.map((k) => catTot[c][k] || 0));
+        const bigAt = (c) => Math.max(3000, 2.5 * (catMed[c] || 0));
+        const M = {};
+        for (const k of months) {
+          const n = daysIn(k);
+          const z = () => new Array(n + 1).fill(0);
+          const o = {
+            k,
+            n,
+            e: 0,
+            fixed: 0,
+            big: 0,
+            daily: 0,
+            cum: z(), // everything
+            cumX: z(), // without 大額
+            cats: {},
+            catsX: {},
+            catCumX: {},
+            bigs: [],
+          };
+          for (const t of txs[k]) {
+            const v = sub(t),
+              d = +t.d.slice(8),
+              c = t.c || "未分類";
+            o.e += v;
+            o.cum[d] += v;
+            o.cats[c] = (o.cats[c] || 0) + v;
+            if (fixedKeys.has(keyOf(t))) o.fixed += v;
+            else if (v >= bigAt(c)) {
+              o.big += v;
+              o.bigs.push(t);
+              continue;
+            } else o.daily += v;
+            o.cumX[d] += v;
+            o.catsX[c] = (o.catsX[c] || 0) + v;
+            (o.catCumX[c] || (o.catCumX[c] = z()))[d] += v;
+          }
+          for (let d = 1; d <= n; d++) {
+            o.cum[d] += o.cum[d - 1];
+            o.cumX[d] += o.cumX[d - 1];
+            for (const c in o.catCumX) o.catCumX[c][d] += o.catCumX[c][d - 1];
+          }
+          o.bigs.sort((a, b) => sub(b) - sub(a));
+          M[k] = o;
+        }
+        // the typical month: per-day median and the P25–P75 band of the base months (without 大額)
+        const nMax = 31,
+          typ = { med: [0], p25: [0], p75: [0], medAll: [0] };
+        for (let d = 1; d <= nMax; d++) {
+          const at = (arr) => baseKs.map((k) => arr(M[k])[Math.min(d, M[k].n)]);
+          typ.med.push(med(at((m) => m.cumX)));
+          typ.p25.push(
+            quant(
+              at((m) => m.cumX),
+              0.25,
+            ),
+          );
+          typ.p75.push(
+            quant(
+              at((m) => m.cumX),
+              0.75,
+            ),
+          );
+          typ.medAll.push(med(at((m) => m.cum)));
+        }
+        const typCat = (c, d) =>
+          med(baseKs.map((k) => (M[k].catCumX[c] ? M[k].catCumX[c][Math.min(d, M[k].n)] : 0)));
+        const typTot = {
+          fixed: med(baseKs.map((k) => M[k].fixed)),
+          daily: med(baseKs.map((k) => M[k].daily)),
+          big: med(baseKs.map((k) => M[k].big)),
+          e: med(baseKs.map((k) => M[k].e)),
+        };
+        const hasBase = baseKs.some((k) => txs[k].length);
+        const out = { D, cm, months, baseKs, M, typ, typCat, typTot, catMed, hasBase, fixedKeys };
+        cmpCache.set(cm, out);
+        return out;
+      }
+      // the basis a month is compared with: "typ" 典型月 | "prev" 上月同期 | "ly" 去年同月 (device setting)
+      function cmpBase() {
+        const b = lsGet("ledger.cmpBase", "typ");
+        return b === "prev" || b === "ly" ? b : "typ";
+      }
+      const CMP_BASE_LABEL = { typ: "典型月", prev: "上月", ly: "去年同月" };
+      // per-category baseline value at day d for the chosen basis (without 大額 unless `all`)
+      function cmpBaseCat(C, c, d, all) {
+        const b = cmpBase();
+        if (b === "typ") return C.typCat(c, d);
+        const k = b === "prev" ? addMonths(C.cm, -1) : addMonths(C.cm, -12);
+        const m = C.M[k];
+        if (!m) return 0;
+        if (all) {
+          // all entries of that category up to day d (大額 included): sum directly
+          let s = 0;
+          for (const t of monthTx(k))
+            if (t.t === "e" && (t.c || "未分類") === c && !D.excl.has(t.c) && +t.d.slice(8) <= d) s += sub(t);
+          return s;
+        }
+        return m.catCumX[c] ? m.catCumX[c][Math.min(d, m.n)] : 0;
+      }
+      function cmpBaseTotal(C, d, all) {
+        const b = cmpBase();
+        if (b === "typ") return all ? C.typ.medAll[Math.min(d, 31)] : C.typ.med[Math.min(d, 31)];
+        const k = b === "prev" ? addMonths(C.cm, -1) : addMonths(C.cm, -12);
+        const m = C.M[k];
+        if (!m) return 0;
+        return (all ? m.cum : m.cumX)[Math.min(d, m.n)];
+      }
+      // ±100 % bullet: a centred bar whose length is the change, red to the right (more), green to the left
+      function bulletHTML(now, before) {
+        if (!(before > 0)) return "";
+        const pc = Math.max(-100, Math.min(100, ((now - before) / before) * 100));
+        const w = Math.abs(pc) / 2;
+        return `<span class="bb" aria-hidden="true"><i class="${pc > 0 ? "bad" : "good"}" style="${pc > 0 ? `left:50%;width:${w}%` : `right:50%;width:${w}%`}"></i></span>`;
+      }
+      // 「發生了什麼」: one sentence for the month in view, up to day d
+      function cmpStoryHTML(C, d, opts = {}) {
+        const m = C.M[C.cm];
+        if (!m || !C.hasBase) return "";
+        const wan = pref("numFmt") === "wan";
+        const f = (v) => (wan ? short(v) : money(v));
+        const cur = m.cumX[Math.min(d, m.n)],
+          base = cmpBaseTotal(C, d, false);
+        const bl = CMP_BASE_LABEL[cmpBase()] + (cmpBase() === "typ" ? "同日" : "同期");
+        const cats = new Set([...Object.keys(m.catsX), ...Object.keys(C.catMed)]);
+        const contrib = [...cats]
+          .map((c) => {
+            const a = m.catCumX[c] ? m.catCumX[c][Math.min(d, m.n)] : 0,
+              b = cmpBaseCat(C, c, d, false);
+            return { c, a, b, diff: a - b };
+          })
+          .filter((x) => Math.abs(x.diff) >= Math.max(200, 0.03 * Math.max(base, 1)));
+        const diff = cur - base;
+        const sameSign = contrib
+          .filter((x) => (diff >= 0 ? x.diff > 0 : x.diff < 0))
+          .sort((x, y) => Math.abs(y.diff) - Math.abs(x.diff))
+          .slice(0, 3);
+        const pc = base > 0 ? Math.round((diff / base) * 100) : null;
+        let s = "";
+        if (base > 0) {
+          const tone = Math.abs(diff) < Math.max(300, 0.05 * base) ? "flat" : diff > 0 ? "bad" : "good";
+          s += `到今天的日常支出 <b class="num">${f(cur)}</b>，${
+            tone === "flat"
+              ? `和${bl}差不多（${f(base)}）`
+              : `比${bl}${diff > 0 ? "多" : "少"} <b class="num ${tone === "bad" ? "exp" : "inc"}">${f(Math.abs(diff))}</b>${pc !== null && Math.abs(pc) < 1000 ? `（${diff > 0 ? "▲" : "▼"}${Math.abs(pc)}%）` : ""}`
+          }`;
+          if (tone !== "flat" && sameSign.length)
+            s += `，主要差在 ${sameSign
+              .map(
+                (x) =>
+                  `<button class="tapline" data-hcat="${esc(x.c)}" data-hcatm="${C.cm}">${esc(x.c)} ${x.diff > 0 ? "+" : "−"}${f(Math.abs(x.diff))}</button>`,
+              )
+              .join("、")}`;
+          s += "。";
+        } else s += `到今天的日常支出 <b class="num">${f(cur)}</b>，${bl}沒有可比的資料。`;
+        if (m.bigs.length) {
+          const upTo = m.bigs.filter((t) => +t.d.slice(8) <= d);
+          if (upTo.length)
+            s += ` 另有 <b>${upTo.length}</b> 筆大額共 <b class="num">${f(upTo.reduce((a, t) => a + sub(t), 0))}</b> 未計入：${upTo
+              .slice(0, 2)
+              .map(
+                (t) =>
+                  `<button class="tapline" data-tx="${esc(t.id)}" data-d="${t.d}">${esc(t.s || t.c)} ${f(sub(t))}</button>`,
+              )
+              .join("、")}${upTo.length > 2 ? " 等" : ""}。`;
+        }
+        return `<div class="card story"><div class="small muted" style="margin-bottom:4px">發生了什麼${opts.sub ? ` · ${opts.sub}` : ""}</div><div class="st">${s}</div></div>`;
+      }
+      // ---- 1. 月進度曲線
+      function drawProgress() {
+        const el = $("#cmpprog");
+        if (!el) return;
+        const C = cmpData(el.dataset.m),
+          m = C.M[C.cm],
+          td = todayStr(),
+          isCur = C.cm === mkey(td),
+          dd = isCur ? +td.slice(8) : m.n,
+          all = !!S.cmpAll;
+        const W = Math.max(300, el.clientWidth),
+          H = 230,
+          L = 46,
+          Rm = 12,
+          T = 12,
+          B = 26,
+          pw = W - L - Rm,
+          ph = H - T - B;
+        const n = m.n;
+        const x = (d) => L + ((d - 1) / (n - 1)) * pw;
+        const curA = all ? m.cum : m.cumX;
+        const pk = addMonths(C.cm, -1),
+          pm = C.M[pk];
+        const prevA = pm ? (all ? pm.cum : pm.cumX) : null;
+        const typ = all ? C.typ.medAll : C.typ.med;
+        const band = !all && C.hasBase;
+        const top = Math.max(
+          1,
+          curA[dd],
+          prevA ? prevA[pm.n] : 0,
+          C.hasBase ? typ[n] : 0,
+          band ? C.typ.p75[n] : 0,
+        );
+        const sc = niceScale(top),
+          mx = sc.top;
+        const y = (v) => T + ph - (v / mx) * ph;
+        let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+        for (let i = 0; i <= sc.n; i++) {
+          const yy = y(sc.step * i);
+          s += `<line class="grid" x1="${L}" x2="${W - Rm}" y1="${yy}" y2="${yy}"/><text x="${L - 6}" y="${yy + 4}" text-anchor="end">${short(sc.step * i)}</text>`;
+        }
+        for (const d of [1, 5, 10, 15, 20, 25, n])
+          if (d <= n) s += `<text x="${x(d)}" y="${H - 8}" text-anchor="middle">${d}</text>`;
+        // a month of a different length is stretched onto this month's axis
+        const xs = (d, nn) => L + ((d - 1) / (nn - 1)) * pw;
+        const pathOf = (arr, upto, nn) => {
+          let p = "";
+          for (let d = 1; d <= upto; d++)
+            p += `${d === 1 ? "M" : "L"}${xs(d, nn).toFixed(1)},${y(arr[Math.min(d, arr.length - 1)]).toFixed(1)}`;
+          return p;
+        };
+        if (band) {
+          let p = "";
+          for (let d = 1; d <= n; d++)
+            p += `${d === 1 ? "M" : "L"}${x(d).toFixed(1)},${y(C.typ.p75[Math.min(d, 31)]).toFixed(1)}`;
+          for (let d = n; d >= 1; d--) p += `L${x(d).toFixed(1)},${y(C.typ.p25[Math.min(d, 31)]).toFixed(1)}`;
+          s += `<path d="${p}Z" fill="var(--accent)" opacity="0.13"><title>常見範圍（近 6 個月的 25–75 百分位）</title></path>`;
+        }
+        if (C.hasBase)
+          s += `<path d="${pathOf(typ, n, n)}" fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="2 3"><title>典型月（近 6 個月中位數）</title></path>`;
+        if (prevA)
+          s += `<path d="${pathOf(prevA, pm.n, pm.n)}" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="6 4"><title>上月</title></path>`;
+        s += `<path d="${pathOf(curA, dd, n)}" fill="none" stroke="var(--exp)" stroke-width="2.6" stroke-linecap="round"><title>本月</title></path>`;
+        s += `<circle cx="${x(dd)}" cy="${y(curA[dd])}" r="4" fill="var(--exp)"/>`;
+        if (isCur)
+          s += `<line x1="${x(dd)}" x2="${x(dd)}" y1="${T}" y2="${T + ph}" stroke="var(--line)" stroke-dasharray="2 3"/>`;
+        s += `<text x="${Math.min(x(dd) + 6, W - Rm - 40)}" y="${Math.max(T + 10, y(curA[dd]) - 8)}" style="fill:var(--exp);font-weight:600">${short(curA[dd])}</text>`;
+        el.innerHTML = s + "</svg>";
+      }
+      // ---- 2. 分類斜率圖: base value on the left, this month on the right
+      function drawSlope() {
+        const el = $("#cmpslope");
+        if (!el) return;
+        const C = cmpData(el.dataset.m),
+          m = C.M[C.cm],
+          td = todayStr(),
+          isCur = C.cm === mkey(td),
+          dd = isCur ? +td.slice(8) : m.n,
+          all = !!S.cmpAll;
+        const cats = new Set([...Object.keys(all ? m.cats : m.catsX), ...Object.keys(C.catMed)]);
+        let rows = [...cats].map((c) => {
+          const a = all
+            ? (() => {
+                let s = 0;
+                for (const t of monthTx(C.cm))
+                  if (t.t === "e" && (t.c || "未分類") === c && !D.excl.has(t.c) && +t.d.slice(8) <= dd)
+                    s += sub(t);
+                return s;
+              })()
+            : m.catCumX[c]
+              ? m.catCumX[c][Math.min(dd, m.n)]
+              : 0;
+          const b = cmpBaseCat(C, c, dd, all);
+          return { c, a, b };
+        });
+        rows = rows
+          .filter((r) => r.a > 0 || r.b > 0)
+          .sort((x, y) => Math.max(y.a, y.b) - Math.max(x.a, x.b))
+          .slice(0, 10);
+        if (!rows.length) {
+          el.innerHTML = `<div class="empty small">沒有可比較的分類</div>`;
+          return;
+        }
+        const W = Math.max(300, el.clientWidth),
+          LW = 118, // label columns on both sides
+          T = 30,
+          rowH = 30,
+          H = T + Math.max(rows.length, 4) * rowH + 18,
+          x0 = LW,
+          x1 = W - LW,
+          ph = H - T - 14;
+        const mx = Math.max(1, ...rows.map((r) => Math.max(r.a, r.b)));
+        // square-root scale: the small categories are spread out instead of piling up at the bottom
+        const yv = (v) => T + ph - Math.sqrt(Math.max(0, v) / mx) * ph;
+        // labels: start at the value's height, then push apart so none overlap (min 15 px)
+        const place = (key) => {
+          const o = rows.map((r, i) => ({ i, y: yv(r[key]) })).sort((p, q) => p.y - q.y);
+          const gap = key === "a" ? 27 : 15; // the right-hand labels have a second line
+          for (let k = 1; k < o.length; k++) if (o[k].y - o[k - 1].y < gap) o[k].y = o[k - 1].y + gap;
+          for (let k = o.length - 2; k >= 0; k--) if (o[k + 1].y - o[k].y < gap) o[k].y = o[k + 1].y - gap;
+          // a chain pushed above the top slides down as a whole; the chart grows downwards if needed
+          const over = T + 4 - Math.min(...o.map((p) => p.y));
+          if (over > 0) for (const p of o) p.y += over;
+          const out = [];
+          for (const p of o) out[p.i] = p.y;
+          return out;
+        };
+        const ya = place("b"),
+          yb = place("a");
+        const H2 = Math.max(H, Math.max(...ya) + 10, Math.max(...yb) + 16);
+        const fmt = (v) => short(v);
+        const bl = CMP_BASE_LABEL[cmpBase()] + (cmpBase() === "typ" ? "" : isCur ? "同期" : "");
+        let s = `<svg viewBox="0 0 ${W} ${H2}" width="${W}" height="${H2}">`;
+        s += `<text x="${x0}" y="12" text-anchor="end" style="font-family:var(--f-body);font-weight:600;fill:var(--ink)">${esc(bl)}</text><text x="${x1}" y="12" text-anchor="start" style="font-family:var(--f-body);font-weight:600;fill:var(--ink)">${isCur ? "本月到今天" : "本月"}</text>`;
+        s += `<line class="grid" x1="${x0}" x2="${x0}" y1="${T}" y2="${T + ph}"/><line class="grid" x1="${x1}" x2="${x1}" y1="${T}" y2="${T + ph}"/>`;
+        rows.forEach((r, i) => {
+          const up = r.a > r.b * 1.02,
+            down = r.a < r.b * 0.98;
+          const col = up ? "var(--exp)" : down ? "var(--inc)" : "var(--muted)";
+          const sw = 1.2 + 3.5 * (Math.max(r.a, r.b) / mx);
+          const pc = r.b > 0 ? Math.round(((r.a - r.b) / r.b) * 100) : null;
+          const tag =
+            r.b < mx * 0.01 && r.a >= mx * 0.05
+              ? "之前極少"
+              : r.b > 0
+                ? Math.abs(pc) < 2
+                  ? "持平"
+                  : pc >= 200
+                    ? `×${(r.a / r.b).toFixed(r.a / r.b >= 10 ? 0 : 1)}`
+                    : `${pc > 0 ? "▲" : "▼"}${Math.abs(pc)}%`
+                : "新";
+          s += `<line x1="${x0}" y1="${yv(r.b)}" x2="${x1}" y2="${yv(r.a)}" stroke="${col}" stroke-width="${sw.toFixed(1)}" stroke-linecap="round" opacity="0.85"><title>${esc(r.c)}：${money(r.b)} → ${money(r.a)}</title></line>`;
+          s += `<circle cx="${x0}" cy="${yv(r.b)}" r="3" fill="${col}"/><circle cx="${x1}" cy="${yv(r.a)}" r="3" fill="${col}"/>`;
+          s += `<text x="${x0 - 8}" y="${ya[i] + 4}" text-anchor="end" style="fill:var(--ink);font-family:var(--f-body);font-size:12px">${esc(r.c.length > 5 ? r.c.slice(0, 5) + "…" : r.c)} <tspan style="fill:var(--muted);font-family:var(--f-num)">${fmt(r.b)}</tspan></text>`;
+          const nm = r.c.length > 4 ? r.c.slice(0, 4) : r.c;
+          s += `<text class="slhit" data-hcat="${esc(r.c)}" data-hcatm="${C.cm}" x="${x1 + 8}" y="${yb[i] - 2}" text-anchor="start" style="fill:var(--ink);font-family:var(--f-body);font-size:12px;cursor:pointer">${esc(nm)} <tspan style="font-family:var(--f-num)">${fmt(r.a)}</tspan></text><text data-hcat="${esc(r.c)}" data-hcatm="${C.cm}" x="${x1 + 8}" y="${yb[i] + 11}" text-anchor="start" style="fill:${col};font-size:11px">${tag}</text>`;
+        });
+        el.innerHTML = s + "</svg>";
+      }
+      // ---- 3. 固定／日常／大額 stacked bars, last 12 months + this one
+      function drawStack() {
+        const el = $("#cmpstack");
+        if (!el) return;
+        const C = cmpData(el.dataset.m),
+          ks = C.months.slice(1);
+        const W = Math.max(300, el.clientWidth),
+          H = 220,
+          L = 44,
+          B = 26,
+          T = 10,
+          pw = W - L - 4,
+          ph = H - B - T,
+          bw = pw / ks.length,
+          w = Math.min(26, bw * 0.66);
+        const top = Math.max(1, ...ks.map((k) => C.M[k].e));
+        const sc = niceScale(top),
+          mx = sc.top;
+        let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+        for (let i = 0; i <= sc.n; i++) {
+          const y = T + ph - (ph * i) / sc.n;
+          s += `<line class="grid" x1="${L}" x2="${W - 4}" y1="${y}" y2="${y}"/><text x="${L - 6}" y="${y + 4}" text-anchor="end">${short(sc.step * i)}</text>`;
+        }
+        ks.forEach((k, i) => {
+          const m = C.M[k],
+            x = L + i * bw + bw / 2 - w / 2;
+          let yTop = T + ph;
+          const seg = (v, fill, op, name) => {
+            if (!(v > 0)) return;
+            const hh = (v / mx) * ph;
+            yTop -= hh;
+            s += `<rect x="${x}" y="${yTop}" width="${w}" height="${hh}" fill="${fill}" opacity="${op}"><title>${k.replace("-", "/")} ${name} ${money(v)}</title></rect>`;
+          };
+          seg(m.fixed, "var(--accent)", 0.9, "固定");
+          seg(m.daily, "var(--exp)", 0.85, "日常");
+          seg(m.big, "var(--warn)", 0.9, "大額");
+          s += `<rect class="trendhit" data-month="${k}" x="${L + i * bw}" y="${T}" width="${bw}" height="${ph + B}" fill="${k === C.cm ? "var(--accent)" : "transparent"}" style="opacity:${k === C.cm ? "var(--hilite)" : 0}"><title>${k.replace("-", "/")} 合計 ${money(m.e)}</title></rect>`;
+          if (i % 2 === ks.length % 2 || k === C.cm)
+            s += `<text x="${L + i * bw + bw / 2}" y="${H - 8}" text-anchor="middle" ${k === C.cm ? 'style="fill:var(--ink);font-weight:600"' : ""}>${+k.slice(5)}月</text>`;
+        });
+        el.innerHTML = s + "</svg>";
+      }
+      // ---- 4. 分類 × 月份 heat map (each row scaled to its own maximum)
+      function heatHTML(C) {
+        const ks = C.months.slice(1);
+        const tot = {};
+        for (const k of ks) for (const c in C.M[k].cats) tot[c] = (tot[c] || 0) + C.M[k].cats[c];
+        const cats = Object.entries(tot)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10)
+          .map(([c]) => c);
+        if (!cats.length) return `<div class="empty small">近 12 個月沒有支出</div>`;
+        let h = `<div class="heat" style="--n:${ks.length}"><div class="hrow head"><span></span>${ks.map((k) => `<span class="hm${k === C.cm ? " cur" : ""}">${+k.slice(5)}</span>`).join("")}</div>`;
+        for (const c of cats) {
+          const vals = ks.map((k) => C.M[k].cats[c] || 0),
+            mx = Math.max(1, ...vals);
+          h += `<div class="hrow"><span class="hl" title="${esc(c)}">${esc(c.length > 4 ? c.slice(0, 4) : c)}</span>${ks
+            .map((k, i) => {
+              const v = vals[i],
+                f = v ? 0.15 + 0.85 * Math.pow(v / mx, 0.6) : 0;
+              return `<button class="hc" data-hcat="${esc(c)}" data-hcatm="${k}" style="--hf:${f.toFixed(2)}" aria-label="${esc(c)} ${k.replace("-", "/")} ${money(v)}" title="${esc(c)} ${k.replace("-", "/")} ${money(v)}"></button>`;
+            })
+            .join("")}<span class="hv num">${short(mx)}</span></div>`;
+        }
+        h += `</div><div class="small muted" style="margin-top:6px">每一列各自以最深色＝該分類 12 個月的最高月（右欄數字）。點格子看那個月那個分類。</div>`;
+        return h;
+      }
+      // 報表›對照 page
+      function viewCmp() {
+        const td = todayStr(),
+          cm = S.month,
+          C = cmpData(cm),
+          m = C.M[cm],
+          isCur = cm === mkey(td),
+          dd = isCur ? +td.slice(8) : m.n;
+        const wan = pref("numFmt") === "wan";
+        const f = (v) => (wan ? short(v) : money(v));
+        const all = !!S.cmpAll;
+        let h = `<div class="card slim"><div class="cmpbar"><select class="inp" id="cmpBase" aria-label="和誰比"><option value="typ"${cmpBase() === "typ" ? " selected" : ""}>典型月（近 6 個月中位數）</option><option value="prev"${cmpBase() === "prev" ? " selected" : ""}>上月${isCur ? "同期" : ""}</option><option value="ly"${cmpBase() === "ly" ? " selected" : ""}>去年同月</option></select><div class="seg" role="group" aria-label="範圍"><button data-act="cmpAll" data-v="0" aria-pressed="${!all}">不含大額</button><button data-act="cmpAll" data-v="1" aria-pressed="${all}">全部</button></div></div></div>`;
+        h += cmpStoryHTML(C, dd, { sub: cm.replace("-", "/") });
+        h += `<div class="card chart"><div class="rowhead"><h3>分類變化</h3><span class="small muted">線越粗金額越大</span></div><div id="cmpslope" data-m="${cm}" style="margin-top:6px"></div></div>`;
+        h += `<div class="card chart"><div class="rowhead"><h3>固定／日常／大額</h3><span class="small muted">近 12 個月</span></div><div id="cmpstack" data-m="${cm}" style="margin-top:8px"></div>
+      <div class="legend" style="margin-top:8px"><button data-act="noop"><span class="sw" style="background:var(--accent)"></span><span class="nm">固定</span><span class="lv num">${f(m.fixed)}</span><span class="meta"><span class="muted">典型 ${f(C.typTot.fixed)}</span></span></button><button data-act="noop"><span class="sw" style="background:var(--exp)"></span><span class="nm">日常</span><span class="lv num">${f(m.daily)}</span><span class="meta"><span class="muted">典型 ${f(C.typTot.daily)}</span></span></button><button data-act="noop"><span class="sw" style="background:var(--warn)"></span><span class="nm">大額</span><span class="lv num">${f(m.big)}</span><span class="meta"><span class="muted">${m.bigs.length} 筆</span></span></button></div>
+      <div class="small muted" style="margin-top:6px">固定＝近 6 個月裡至少 4 個月出現的同分類同金額；大額＝單筆超過該分類平常一個月的 2.5 倍（且 ≥ 3,000）；其餘是日常。</div></div>`;
+        if (m.bigs.length)
+          h += `<section class="day"><div class="dayhead"><span><b>${isCur ? "本月" : cm.replace("-", "/")} 的大額</b></span><span class="num exp">${money(m.big)}</span></div>${m.bigs
+            .slice(0, 8)
+            .map((t) => txRow(t, { extra: `<small class="num muted">${esc(mdLabel(t.d))}</small>` }))
+            .join("")}</section>`;
+        h += `<div class="card chart"><div class="rowhead"><h3>分類 × 月份</h3><span class="small muted">哪個分類哪個月突然變深</span></div><div style="margin-top:8px">${heatHTML(C)}</div></div>`;
+        return h;
+      }
       function viewHome() {
         const page = curSub("home");
         if (!S.hasData && S.mode !== "sample") return noticesHTML() + onboardHTML();
@@ -4735,12 +5356,30 @@
         const netHTML = (net) =>
           `<span class="num" style="color:${net < 0 ? "var(--exp)" : "var(--ink)"}">${fmtN(net, true)}</span>`;
         // 「昨日 1,980 ▼37%」 — the previous period's spending and the change against it
-        const cmpLine = (p, cur, prev) =>
-          `<div class="hcmp" title="${p.plabel}：${rangeLabel(p.pa, p.pb).replace(/–/g, " 到 ")}"><span class="k">${p.plabel}</span>${
-            prev.e > 0
-              ? `<b class="num">${fmtN(prev.e)}</b>${homeDelta(cur.e, prev.e)}`
+        const cmpLine = (p, cur, prev) => {
+          // 月: against the chosen basis (典型月 by default) instead of only the previous month
+          let label = p.plabel,
+            base = prev.e,
+            title = `${p.plabel}：${rangeLabel(p.pa, p.pb).replace(/–/g, " 到 ")}`;
+          if (p === P.月) {
+            const C = cmpData(mkey(td));
+            if (C.hasBase && cmpBase() === "typ") {
+              base = C.typ.medAll[+td.slice(8)];
+              label = "典型月同日";
+              title = "典型月：近 6 個月到同一天的中位數";
+            } else if (cmpBase() === "ly") {
+              const k = addMonths(mkey(td), -12);
+              base = C.M[k] ? C.M[k].cum[Math.min(+td.slice(8), C.M[k].n)] : 0;
+              label = "去年同月同期";
+              title = "去年同月 1 日到同一天";
+            }
+          }
+          return `<div class="hcmp" title="${title}"><span class="k">${label}</span>${
+            base > 0
+              ? `<b class="num">${fmtN(base)}</b>${homeDelta(cur.e, base)}${bulletHTML(cur.e, base)}`
               : `<span class="dl flat">—</span><span class="muted">沒有支出</span>`
           }</div>`;
+        };
         // the headline card shared by 日／週／月／年: three numbers + the same-length comparison
         const headCard = (key, subtitle) => {
           const p = P[key],
@@ -4778,6 +5417,13 @@
         if (page === "月") {
           const p = P.月;
           h += headCard("月", `${+td.slice(5, 7)} 月 1 日到今天`);
+          const C = cmpData(mkey(td)),
+            dd = +td.slice(8);
+          if (C.hasBase) {
+            h += cmpStoryHTML(C, dd);
+            h += `<div class="card chart"><div class="rowhead"><h3>本月進度</h3><div class="seg" role="group" aria-label="範圍"><button data-act="cmpAll" data-v="0" aria-pressed="${!S.cmpAll}">不含大額</button><button data-act="cmpAll" data-v="1" aria-pressed="${!!S.cmpAll}">全部</button></div></div><div id="cmpprog" data-m="${mkey(td)}" style="margin-top:6px"></div>
+    <div class="plegend"><span><i style="background:var(--exp)"></i>本月</span><span><i class="dash" style="border-color:var(--accent)"></i>上月</span><span><i class="dot" style="border-color:var(--muted)"></i>典型月</span><span><i class="band"></i>常見範圍</span><button class="tapline" data-act="goCmp">更多對照 ›</button></div></div>`;
+          }
           h += `<div class="card chart"><div class="rowhead"><h3>近 12 個月收支</h3><span class="small muted"><span class="inc">■</span> 收入　<span class="exp">■</span> 支出</span></div><div id="htrend" data-kind="months" style="margin-top:8px"></div><div class="small muted">點任一個月的長條，就會到那個月的明細</div></div>`;
           h += topList("本月最大幾筆", homeTop(p.a, p.b));
           return h;
@@ -5526,6 +6172,7 @@
         let rows = Object.entries(groups).sort((a, b) => b[1] - a[1]);
         const page = curSub("report");
         let h = subtabsHTML("report");
+        if (page === "對照") return h + viewCmp();
         if (page === "走勢") {
           const TS = trendSpec();
           h += `<div class="card chart"><div class="rowhead"><h3>${esc(TS.title)}</h3><span class="small muted">${TS.cat ? `<span style="color:${TS.color}">■</span> ${esc(TS.cat)}` : `<span class="inc">■</span> 收入　<span class="exp">■</span> 支出`}</span></div><div id="trend" style="margin-top:8px"></div><div class="small muted">${TS.yearly ? "點任一年的長條，就會切到那一年" : "點任一個月份的長條，就會切到那個月"}${R.drill ? `　·　<button class="tapline" data-act="undrill" style="margin:-10px 0">看全部分類</button>` : ""}</div></div>`;
@@ -6396,6 +7043,24 @@
             render();
             return;
           }
+          const hc = e.target.closest("[data-hcat]");
+          if (hc) {
+            // a category in 對照／主頁 → 報表›分類 drilled into it (that month, or this year from 主頁›年)
+            S.rep.type = "e";
+            S.rep.drill = hc.dataset.hcat;
+            if (hc.dataset.hcatm) {
+              S.rep.period = "m";
+              S.month = hc.dataset.hcatm;
+            } else {
+              S.rep.period = "y";
+              S.month = mkey(todayStr());
+            }
+            S.tab = "report";
+            setSub("report", "分類");
+            render();
+            window.scrollTo(0, 0);
+            return;
+          }
           const b = e.target.closest("button,[data-day]");
           if (!b) return;
           if (b.dataset.sub) {
@@ -6613,6 +7278,17 @@
               render();
             },
             recon: openReconcile,
+            cmpAll: () => {
+              S.cmpAll = b.dataset.v === "1";
+              render();
+            },
+            goCmp: () => {
+              S.month = mkey(todayStr());
+              S.tab = "report";
+              setSub("report", "對照");
+              render();
+              window.scrollTo(0, 0);
+            },
             goList: () => {
               S.month = mkey(todayStr());
               S.tab = "list";
@@ -6684,6 +7360,9 @@
             matAcc(s.dataset.ag).group = s.value;
             saveMeta();
             render();
+          } else if (s.id === "cmpBase") {
+            lsSet("ledger.cmpBase", s.value);
+            render();
           } else if (s.id === "mcKind") {
             lsSet("ledger.moreChartsKind", s.value);
             drawMore();
@@ -6727,6 +7406,9 @@
         drawCalWD();
         drawAcctBars();
         drawHome();
+        drawProgress();
+        drawSlope();
+        drawStack();
       }
       window.addEventListener("resize", () => {
         if ($("#view .chart")) drawCharts();
