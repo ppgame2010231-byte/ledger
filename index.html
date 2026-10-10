@@ -1726,12 +1726,53 @@
         font-size: 14px;
       }
       .catarea {
-        flex: 1;
-        min-height: 196px;
+        flex: none;
         display: flex;
         flex-direction: column;
         padding: 0 16px;
+      }
+      .catsel {
+        flex: none;
+        display: grid;
+        grid-template-columns: 36px minmax(0, 1.1fr) minmax(0, 1fr);
+        gap: 8px;
+        align-items: center;
+        margin: 0 0 10px;
+      }
+      .csel {
+        position: relative;
+        min-width: 0;
+      }
+      .csel select {
+        appearance: none;
+        -webkit-appearance: none;
+        height: 44px;
+        padding: 0 30px 0 12px;
+        font-size: 15px;
+        white-space: nowrap;
         overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .csel::after {
+        content: "▾";
+        position: absolute;
+        right: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--muted);
+        pointer-events: none;
+      }
+      .csel.off select {
+        color: var(--muted);
+        background: var(--surface2);
+      }
+      .guessnote {
+        margin: -4px 0 8px 44px;
+      }
+      .freq .fl {
+        flex: none;
+        align-self: center;
+        padding-right: 2px;
       }
       .panes {
         flex: 1;
@@ -2054,9 +2095,10 @@
         grid-template-columns: repeat(4, 1fr);
         gap: 8px;
         padding: 6px 16px 12px;
+        margin-top: auto; /* the fields group under the amount; the keypad stays within thumb reach */
       }
       .keys button {
-        height: 46px;
+        height: 52px;
         border-radius: 12px;
         background: var(--surface);
         box-shadow: var(--shadow);
@@ -2105,10 +2147,10 @@
         font-size: 26px;
       }
       .rec.short .catarea {
-        min-height: 168px;
+        min-height: 0;
       }
-      .rec.more .catarea {
-        min-height: 150px; /* the 更多 row borrows from the category area rather than pushing the keys out */
+      .rec.short .catsel {
+        margin-bottom: 6px;
       }
       .rec.short .recfields {
         gap: 6px;
@@ -3082,8 +3124,17 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "1.7.2";
+      const APP_VERSION = "1.8.0";
       const CHANGELOG = [
+        [
+          "1.8.0",
+          "2026-10-10",
+          [
+            "記帳頁重新排版：分類改成「主分類 ▾ 子分類 ▾」兩個下拉選單，前面帶顏色方塊；不再有兩欄分類清單和搜尋框",
+            "欄位由上而下：金額 → 分類 → 最近用過（最多 4 個）→ 備註 → 日期／帳戶，數字鍵盤固定在底部、按鍵加大",
+            "下拉選單最後一項可直接「＋ 新增主分類／子分類」",
+          ],
+        ],
         [
           "1.7.2",
           "2026-10-10",
@@ -6965,45 +7016,34 @@
         pullDown(el, () => tryClose());
         // a sub-category name may break after 「/」 but never inside a word
         const subName = (s2) => esc(s2).replace(/\//g, "/&#8203;");
+        // category: two native dropdowns (主分類 → 子分類) with the category's colour swatch in front,
+        // plus up to four 「最近」 chips in the full sheet; the old two-column picker and its search are gone
         function panesHTML() {
           const cats = S.meta.cats[R.t] || [],
             main = cats.find((c) => c.n === R.c);
-          const q = (R.q || "").trim().toLowerCase();
-          if (q) {
-            const hits = [];
-            for (const c of cats) {
-              if (c.n.toLowerCase().includes(q)) hits.push([c.n, ""]);
-              for (const s2 of c.s) if (s2.toLowerCase().includes(q)) hits.push([c.n, s2]);
-            }
-            return `<div class="panes" style="grid-template-columns:1fr"><div class="hits">${
-              hits.length
-                ? hits
-                    .slice(0, 40)
-                    .map(
-                      ([c, s2]) =>
-                        `<button data-pick="${esc(c)}|${esc(s2)}"><span class="dot badge" style="width:24px;height:24px;font-size:12px;border-radius:8px;--c:${catColor(R.t, c)}">${esc(initial(c))}</span><span>${esc(s2 || c)}</span>${s2 ? `<span class="path">${esc(c)}</span>` : ""}</button>`,
-                    )
-                    .join("")
-                : `<div class="nohit"><span class="small muted">找不到「${esc(R.q)}」。</span><button class="btn sm" data-act="addHit">${R.c ? `把「${esc(R.q.trim())}」加進 ${esc(R.c)}` : `新增主分類「${esc(R.q.trim())}」`}</button></div>`
-            }</div></div>`;
-          }
           const hintTop = !R.c && !editing && pref("preselect") === "suggest";
-          const freq = drawnTops.length
-            ? `<div class="freq">${drawnTops
-                .map((f, i) => {
-                  const showAcc = f.acc !== R.acc;
-                  return `<button data-top="${i}"${hintTop && i === 0 ? ' data-hint="1"' : ""}><b>${esc(f.s || f.c)}</b>${showAcc ? `<small>${esc(dispAcc(f.acc))}</small>` : ""}</button>`;
-                })
-                .join("")}</div>`
-            : "";
-          return `<div class="panes">
-          <div class="mains" id="rMains">${mode === "simple" ? "" : `<button class="csbtn" data-act="qopen" aria-label="搜尋分類"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></span><span class="mn">搜尋</span></button>`}${cats.map((c) => `<button data-main="${esc(c.n)}" aria-pressed="${c.n === R.c}"><span class="dot" style="--c:${catColor(R.t, c.n)}">${esc(initial(c.n))}</span><span class="mn">${esc(c.n)}</span></button>`).join("")}<button data-act="addMain" class="muted"><span class="dot">＋</span><span class="mn">主分類</span></button></div>
-          <div class="subcol">${freq}<div class="subs">${
-            main
-              ? `${main.s.map((s2) => `<button data-sub="${esc(s2)}" aria-pressed="${s2 === R.s}"${R.guess && s2 === R.s ? ' data-guess="1"' : ""}>${subName(s2)}</button>`).join("")}<button data-act="addSub" class="muted" style="border-style:dashed">＋ 子分類</button>`
-              : `<div class="small muted pickhint">先選一個分類</div>`
-          }</div></div>
-        </div>`;
+          const freq =
+            mode !== "simple" && drawnTops.length
+              ? `<div class="freq"><span class="fl small muted">最近</span>${drawnTops
+                  .slice(0, 4)
+                  .map((f, i) => {
+                    const showAcc = f.acc !== R.acc;
+                    return `<button data-top="${i}"${hintTop && i === 0 ? ' data-hint="1"' : ""}><b>${esc(f.s || f.c)}</b>${showAcc ? `<small>${esc(dispAcc(f.acc))}</small>` : ""}</button>`;
+                  })
+                  .join("")}</div>`
+              : "";
+          const subOpts = main
+            ? `<option value="">${main.s.length ? "不選子分類" : "沒有子分類"}</option>${main.s
+                .map((s2) => `<option${s2 === R.s ? " selected" : ""}>${esc(s2)}</option>`)
+                .join("")}<option value="__new">＋ 新增子分類…</option>`
+            : `<option value="">子分類</option>`;
+          return `<div class="catsel">
+            <span class="badge" style="--c:${R.c ? catColor(R.t, R.c) : "var(--muted)"}">${R.c ? esc(initial(R.c)) : "？"}</span>
+            <span class="csel"><select class="inp" id="rMain" aria-label="主分類"><option value=""${R.c ? "" : " selected"}>選分類</option>${cats
+              .map((c) => `<option${c.n === R.c ? " selected" : ""}>${esc(c.n)}</option>`)
+              .join("")}<option value="__new">＋ 新增主分類…</option></select></span>
+            <span class="csel${main ? "" : " off"}"><select class="inp" id="rSub" aria-label="子分類"${main ? "" : " disabled"}>${subOpts}</select></span>
+          </div>${R.guess && R.s ? `<div class="small muted guessnote">子分類是依這個時段的習慣先幫你選的，可以直接改</div>` : ""}${freq}`;
         }
         function value() {
           return evalExpr(R.expr);
@@ -7127,8 +7167,7 @@
             ? R.t === "x"
               ? xferHTML()
               : `<p class="small muted" style="margin:6px 0">餘額調整只改這個帳戶的餘額，不算收支。</p>`
-            : `${R.qOpen ? `<div class="ctop"><input class="csearch on" id="rCatQ" type="search" placeholder="輸入分類名稱，例如 飲料" value="${esc(R.q || "")}" autocomplete="off" aria-label="搜尋分類" enterkeyhint="search"><button class="btn sm" data-act="qclose">取消</button></div>` : ""}
-                ${panesHTML()}`
+            : panesHTML()
         }
       </div>
             <div class="recfields">
@@ -7639,6 +7678,51 @@
           el.addEventListener(ev, () => clearTimeout(lpT)),
         );
         el.addEventListener("change", (e) => {
+          if (e.target.id === "rMain") {
+            readFields();
+            if (e.target.value === "__new") {
+              inlineAdd("新主分類名稱", (name) => {
+                if (!S.meta.cats[R.t].find((c) => c.n === name)) S.meta.cats[R.t].push({ n: name, s: [] });
+                R.c = name;
+                R.s = "";
+                R.guess = false;
+                saveMeta();
+                draw();
+              });
+              draw(); // the select shows the current category again while the name is being typed
+              return;
+            }
+            R.c = e.target.value;
+            R.s = R.c ? subFor(R.t, R.c) : "";
+            const m = S.meta.cats[R.t].find((c) => c.n === R.c);
+            if (m && !m.s.includes(R.s)) R.s = "";
+            R.guess = false;
+            R.nsugAll = false;
+            autoAcc();
+            draw();
+            return;
+          }
+          if (e.target.id === "rSub") {
+            readFields();
+            if (e.target.value === "__new") {
+              inlineAdd(`「${R.c}」的新子分類`, (name) => {
+                const m = S.meta.cats[R.t].find((c) => c.n === R.c);
+                if (m && !m.s.includes(name)) m.s.push(name);
+                R.s = name;
+                R.guess = false;
+                saveMeta();
+                draw();
+              });
+              draw();
+              return;
+            }
+            R.s = e.target.value;
+            R.guess = false;
+            R.nsugAll = false;
+            autoAcc();
+            draw();
+            return;
+          }
           if (e.target.id === "rCur") {
             readFields();
             R.cur = e.target.value;
