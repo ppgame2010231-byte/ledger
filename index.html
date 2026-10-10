@@ -3214,6 +3214,61 @@
       .fpick .num {
         font-weight: 600;
       }
+      /* page transitions (render() adds one class; the sub-page bar itself stays put) */
+      @keyframes vin-r {
+        from {
+          opacity: 0;
+          transform: translateX(32px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes vin-l {
+        from {
+          opacity: 0;
+          transform: translateX(-32px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes vin-f {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      #view.anim-r,
+      #view.anim-l {
+        overflow-x: clip; /* the slide-in offset must not become a sideways scroll */
+      }
+      #view.anim-r > :not(.subtabs) {
+        animation: vin-r 0.26s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      }
+      #view.anim-l > :not(.subtabs) {
+        animation: vin-l 0.26s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      }
+      #view.anim-f > :not(.subtabs) {
+        animation: vin-f 0.22s ease-out both;
+      }
+      /* a sub-page bar that appears with a new tab fades in with it */
+      #view.anim-f > .subtabs {
+        animation: vin-f 0.22s ease-out both;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #view.anim-r > *,
+        #view.anim-l > *,
+        #view.anim-f > * {
+          animation: none;
+        }
+      }
       /* 對照 */
       .bb {
         position: relative;
@@ -3489,8 +3544,15 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "2.1.0";
+      const APP_VERSION = "2.1.1";
       const CHANGELOG = [
+        [
+          "2.1.1",
+          "2026-10-10",
+          [
+            "切換畫面有過場：換分頁、換子頁、換月份時內容從對應方向滑入（約 0.25 秒），系統設定「減少動態效果」時不播",
+          ],
+        ],
         [
           "2.1.0",
           "2026-10-10",
@@ -4417,9 +4479,23 @@
       /* ========== header & tabs ========== */
       // "cal" is no longer a tab (日曆 lives under 明細); the key stays so stored values still resolve
       const TITLES = { home: "主頁", list: "明細", cal: "日曆", report: "報表", acct: "帳戶", more: "更多" };
+      // page transitions: the new content slides in from the side it lives on (tabs left→right, sub-pages,
+      // months) or fades up; set by the navigation that triggers the render, consumed by render()
+      const TAB_ORDER = ["home", "list", "report", "acct", "more"];
+      let viewAnim = null; // "l" | "r" | "f"
+      function animDir(from, to, order) {
+        const a = order.indexOf(from),
+          b = order.indexOf(to);
+        if (a < 0 || b < 0 || a === b) return;
+        viewAnim = b > a ? "r" : "l";
+      }
       document.querySelectorAll(".tabs button").forEach(
         (b) =>
           (b.onclick = () => {
+            if (S.tab !== b.dataset.tab) {
+              animDir(S.tab, b.dataset.tab, TAB_ORDER);
+              if (!viewAnim) viewAnim = "f";
+            }
             S.tab = b.dataset.tab;
             S.rep.drill = null;
             render();
@@ -4442,6 +4518,7 @@
         if (!has) R.drill = null;
       }
       function gotoMonth(k) {
+        if (k !== S.month) viewAnim = k > S.month ? "r" : "l";
         S.month = k;
         S.calDay = null;
         syncDrill();
@@ -4553,6 +4630,13 @@
       function setSub(tab, id) {
         if (!SUBPAGES[tab] || !SUBPAGES[tab].some((p) => p.id === id)) return;
         if (!S.sub) S.sub = {};
+        if (S.sub[tab] && S.sub[tab] !== id && tab === S.tab)
+          animDir(
+            S.sub[tab],
+            id,
+            SUBPAGES[tab].map((p) => p.id),
+          );
+        else if (tab !== S.tab && !viewAnim) viewAnim = "f";
         S.sub[tab] = id;
         lsSet("ledger.sub." + tab, id);
       }
@@ -4645,6 +4729,12 @@
           v.innerHTML = `<div class="card empty">載入帳本中…</div>`;
           return;
         }
+        v.classList.remove("anim-l", "anim-r", "anim-f"); // a plain re-render (after a save, say) does not replay it
+        if (viewAnim && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          void v.offsetWidth; // restart the animation even when the same class is applied twice in a row
+          v.classList.add("anim-" + viewAnim);
+        }
+        viewAnim = null;
         v.innerHTML = { home: viewHome, list: viewList, report: viewReport, acct: viewAcct, more: viewMore }[
           S.tab
         ]();
