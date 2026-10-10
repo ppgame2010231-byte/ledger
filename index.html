@@ -3297,6 +3297,55 @@
           animation: none;
         }
       }
+      /* 週復盤 */
+      .fltag {
+        display: inline-block;
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--warn);
+        border: 1px solid color-mix(in srgb, var(--warn) 55%, transparent);
+        border-radius: 5px;
+        padding: 0 4px;
+        vertical-align: 1px;
+        margin-left: 2px;
+      }
+      .txw.flagged .tx {
+        background: color-mix(in srgb, var(--warn) 9%, var(--surface));
+      }
+      .review .summary .v.warn {
+        color: var(--warn);
+      }
+      .rvcard {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        text-align: left;
+      }
+      .rvcard .mi {
+        flex: none;
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        display: grid;
+        place-items: center;
+        background: color-mix(in srgb, var(--warn) 18%, var(--surface));
+        color: var(--warn);
+      }
+      .rvcard .mi svg {
+        width: 22px;
+        height: 22px;
+      }
+      .rvcard .ct {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .rvcard .ct small {
+        color: var(--muted);
+      }
       /* 主頁 chart tiles */
       .cgrid {
         display: grid;
@@ -3635,8 +3684,17 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "2.2.0";
+      const APP_VERSION = "2.3.0";
       const CHANGELOG = [
+        [
+          "2.3.0",
+          "2026-10-10",
+          [
+            "新增「週復盤」：主頁 › 週 或 更多 › 管理 進入，逐筆看這週的支出；點一下把那筆標成「可避免」（衝動、不值得），再點一下取消",
+            "復盤頁有本週支出／可避免金額／佔比、可避免的分類分布，和近 12 週可避免金額長條；‹ › 可回看以前的週",
+            "標記過的帳在明細、主頁都會帶「可避免」小標；主頁 本週 卡片多一行可避免合計",
+          ],
+        ],
         [
           "2.2.0",
           "2026-10-10",
@@ -4936,9 +4994,9 @@
           } else amtHTML = "⇄ " + money(v, { dec: true });
         } else amtHTML = money(amt, { sign: t.t === "i" || (t.t === "a" && v > 0), dec: true });
         const mk = opt.mark;
-        return `<div class="txw"><button class="tx" data-tx="${esc(t.id)}" data-d="${t.d}">
+        return `<div class="txw${t.fl ? " flagged" : ""}"><button class="tx" data-tx="${esc(t.id)}" data-d="${t.d}">
     <span class="badge" style="--c:${L.color}">${esc(L.ch)}</span>
-    <span class="mid"><div class="t1">${mk ? markHTML(title, mk) : esc(title)}${t.rec ? ' <span class="muted small">↻</span>' : ""}</div><div class="t2">${mk ? markHTML(bits.join(" · "), mk) : esc(bits.join(" · "))}</div></span>
+    <span class="mid"><div class="t1">${mk ? markHTML(title, mk) : esc(title)}${t.rec ? ' <span class="muted small">↻</span>' : ""}${t.fl ? ' <span class="fltag">可避免</span>' : ""}</div><div class="t2">${mk ? markHTML(bits.join(" · "), mk) : esc(bits.join(" · "))}</div></span>
     <span class="amt ${cls}"><span>${amtHTML}</span>${fx}${opt.extra || ""}</span></button></div>`;
       }
       // one <section class="day"> per date, newest first
@@ -5608,6 +5666,12 @@
         if (page === "週") {
           const p = P.週;
           h += headCard("週", `${rangeLabel(p.a, addDays(p.a, 6))}，到今天`);
+          {
+            const W = weekTx(p.a),
+              fl = W.filter((t) => t.fl),
+              flv = fl.reduce((a, t) => a + sub(t), 0);
+            h += `<button class="card rvcard" data-act="review"><span class="mi">${svgI("review")}</span><span class="ct"><b>週復盤</b><small>${fl.length ? `已標記 ${fl.length} 筆可避免 · ${money(flv)}` : "逐筆看這週花的錢，標出衝動或不值得的"}</small></span><span class="chev">›</span></button>`;
+          }
           h += `<div class="card chart"><div class="rowhead"><h3>本週每日支出</h3><span class="small muted">點長條看那天的帳</span></div><div id="hbars" data-kind="week" style="margin-top:8px"></div></div>`;
           h += `<div class="card chart"><div class="rowhead"><h3>近 8 週支出</h3><span class="small muted">每週合計，本週到今天</span></div><div id="hbars2" data-kind="weeks" style="margin-top:8px"></div></div>`;
           h += topList("本週最大幾筆", homeTop(p.a, p.b));
@@ -5700,10 +5764,11 @@
             cur = homeSum(p.a, p.b),
             prev = homeSum(p.pa, p.pb);
           if (key === "年") h += charts;
+          const flw = key === "週" ? weekTx(p.a).filter((t) => t.fl) : [];
           h += `<button class="card hcard" data-hp="${key}" aria-label="${p.label}收支，看${key}的頁面">
     <div class="hh"><span class="ht">${p.label}</span><span class="small muted">${subs[key]}</span><span class="chev">›</span></div>
     <div class="hbody"><div class="hbig"><span class="k">支出</span><span class="num exp">${fmtN(cur.e)}</span></div><div class="hside"><span class="k">收入</span><b class="num inc">${fmtN(cur.i)}</b><span class="k">結餘</span>${netHTML(cur.i - cur.e)}</div></div>
-    ${cmpLine(p, cur, prev)}</button>`;
+    ${cmpLine(p, cur, prev)}${flw.length ? `<div class="hcmp"><span class="k">可避免</span><b class="num">${fmtN(flw.reduce((a, t) => a + sub(t), 0))}</b><span class="muted">${flw.length} 筆 · 週復盤</span></div>` : ""}</button>`;
         }
         const n = (homeData().byDay[td] || {}).n || 0;
         h += `<div class="card slim"><div class="meta-line"><span class="st"${n ? "" : ' style="overflow:visible"'}>${
@@ -7222,6 +7287,7 @@
         donut:
           '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 4v5M17.7 8.3l-3.5 3.5"/>',
         wd: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+        review: '<path d="M4 6h16M4 12h10M4 18h7"/><path d="M15 17l2 2 4-4"/>',
       };
       const svgI = (k) =>
         `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>`;
@@ -7235,7 +7301,7 @@
           lb = /^\d{4}-\d{2}-\d{2}$/.test(String(S.meta.lastBackup || ""))
             ? S.meta.lastBackup.replace(/-/g, "/")
             : "";
-        return `<div class="mh">管理</div><div class="menu">${it("budgets", "budget", "預算", S.meta.budgets?.total ? "每月 " + money(S.meta.budgets.total) : "還沒設定")}${it("recurring", "rec", "定期記帳", rc ? rc + " 筆" : "房租、電話費這類每月固定的帳")}${it("projects", "proj", "專案", pj ? pj + " 個專案" : "一趟旅行、一次裝修的花費集中看")}${it("cats", "cat", "分類", "新增、排序、改名、顏色")}${it("search", "search", "搜尋帳目", "依備註、金額、分類、帳戶找舊帳")}</div>
+        return `<div class="mh">管理</div><div class="menu">${it("budgets", "budget", "預算", S.meta.budgets?.total ? "每月 " + money(S.meta.budgets.total) : "還沒設定")}${it("recurring", "rec", "定期記帳", rc ? rc + " 筆" : "房租、電話費這類每月固定的帳")}${it("projects", "proj", "專案", pj ? pj + " 個專案" : "一趟旅行、一次裝修的花費集中看")}${it("cats", "cat", "分類", "新增、排序、改名、顏色")}${it("search", "search", "搜尋帳目", "依備註、金額、分類、帳戶找舊帳")}${it("review", "review", "週復盤", "逐筆看這週的支出，標出可避免的")}</div>
   <div class="mh">資料</div><div class="menu">${it("backup", "save", "備份", lb ? "上次備份 " + lb : "存一份到 iCloud 雲碟或「檔案」App")}${it("restore", "imp", "還原備份", "")}${it("import", "imp", "從 CWMoney 匯入", "把 CWMoney 匯出的檔案帶進來")}${it("export", "exp", "匯出成 CWMoney 格式", "可以匯回 CWMoney，或用試算表打開")}${it("recon", "acct", "對帳", "一次填好所有帳戶的實際餘額，可分多次做")}</div>
   <div class="mh">設定</div><div class="menu">${it("settings", "set", "設定", "外觀、啟動、記帳畫面、明細與報表、帳戶與分類、資料")}${it("about", "info", "關於", "v" + APP_VERSION + "、資料存在哪裡、加到主畫面", true)}</div>
   <p class="small muted" style="text-align:center;margin-top:18px">${S.mode === "sample" ? "範例模式，不會儲存" : "資料只存在這支手機"}　·　${D.count.toLocaleString()} 筆${D.first ? `，自 ${D.first.slice(0, 7).replace("-", "/")} 起` : ""}</p>`;
@@ -7533,6 +7599,7 @@
               S.cmpAll = b.dataset.v === "1";
               render();
             },
+            review: () => openReview(),
             // 主頁 chart tiles → the page that holds that chart, scrolled to it
             goChart: () => {
               const id = b.dataset.chart,
@@ -8566,7 +8633,7 @@
             ts: editing ? tx.ts || Date.now() : Date.now(),
           };
           if (editing) {
-            for (const k of ["ct", "gps", "addr", "inv", "its", "igps", "iaddr", "iinv", "rec"])
+            for (const k of ["ct", "gps", "addr", "inv", "its", "igps", "iaddr", "iinv", "rec", "fl"])
               if (tx[k] !== undefined) t[k] = tx[k];
             const same =
               tx.t === t.t && (sameAmt || +tx.a === t.a) && (+tx.r || 1) === (R.cur !== "TWD" ? +R.r : 1);
@@ -9269,6 +9336,119 @@
           t.v = r2(diff * r);
         }
         return t;
+      }
+      /* ========== 週復盤: this week's expenses, one tap marks an entry 可避免 (impulse / not worth it) ========== */
+      function weekStart(d) {
+        const ws = +pref("weekStart") === 1 ? 1 : 0;
+        return addDays(d, -((parseD(d).getDay() - ws + 7) % 7));
+      }
+      function weekTx(w0) {
+        const w1 = addDays(w0, 6),
+          out = [];
+        for (let k = mkey(w0); k <= mkey(w1); k = addMonths(k, 1))
+          for (const t of monthTx(k))
+            if (t.t === "e" && !D.excl.has(t.c) && t.d >= w0 && t.d <= w1) out.push(t);
+        return out;
+      }
+      function openReview(w0 = weekStart(todayStr())) {
+        const td = todayStr();
+        openSheet("週復盤", (api) => {
+          const cur = weekStart(td),
+            L = weekTx(w0),
+            w1 = addDays(w0, 6);
+          const tot = L.reduce((a, t) => a + sub(t), 0),
+            fl = L.filter((t) => t.fl),
+            flv = fl.reduce((a, t) => a + sub(t), 0);
+          const byCat = {};
+          for (const t of fl) byCat[t.c || "未分類"] = (byCat[t.c || "未分類"] || 0) + sub(t);
+          const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+          // the last 12 weeks: how much was marked 可避免 against that week's spending
+          const hist = [];
+          for (let i = 11; i >= 0; i--) {
+            const a = addDays(w0, -7 * i),
+              T = weekTx(a);
+            const e = T.reduce((x, t) => x + sub(t), 0),
+              f = T.filter((t) => t.fl).reduce((x, t) => x + sub(t), 0);
+            hist.push({ a, e, f, cur: i === 0 });
+          }
+          const isCur = w0 === cur;
+          api.body.innerHTML = `<div class="stack review">
+      <div class="card slim"><div class="meta-line"><button class="iconbtn" data-rw="-1" aria-label="上一週">‹</button><span class="st" style="text-align:center;flex:1">${isCur ? "本週 " : ""}${rangeLabel(w0, w1)}${w0.slice(0, 4) !== td.slice(0, 4) ? `（${w0.slice(0, 4)}）` : ""}</span><button class="iconbtn" data-rw="1" aria-label="下一週" ${isCur ? "disabled" : ""}>›</button></div></div>
+      <div class="card"><div class="summary"><div><div class="k">本週支出</div><div class="v num exp">${money(tot)}</div></div><div><div class="k">標記可避免</div><div class="v num ${flv ? "warn" : ""}">${money(flv)}</div></div><div><div class="k">佔比</div><div class="v num">${tot && flv ? (flv / tot < 0.005 ? "<1" : Math.round((flv / tot) * 100)) : 0}%</div></div></div>
+        ${
+          fl.length
+            ? `<div class="small muted" style="margin-top:8px">${fl.length} 筆 · ${cats
+                .slice(0, 3)
+                .map(([c, v]) => `${esc(c)} ${money(v)}`)
+                .join("、")}${cats.length > 3 ? " …" : ""}</div>`
+            : `<div class="small muted" style="margin-top:8px">點一下清單裡的項目，標記為「可避免」（衝動、不值得、事後覺得該省）；再點一下取消。</div>`
+        }</div>
+      <div class="card chart"><div class="rowhead"><h3>近 12 週 可避免金額</h3><span class="small muted">灰＝當週支出</span></div><div id="rvbars" style="margin-top:8px"></div></div>
+      ${
+        L.length
+          ? `<div class="small muted" style="margin:0 4px -4px">點項目標記／取消；要改內容請到明細</div>` +
+            dayGroups(L, { year: w0.slice(0, 4) !== td.slice(0, 4) })
+          : `<div class="card empty">這一週沒有支出</div>`
+      }
+    </div>`;
+          // chart: grey bar = the week's spending, warn bar on top = the part marked 可避免
+          const el = api.body.querySelector("#rvbars");
+          const W = Math.max(300, el.clientWidth || 340),
+            H = 170,
+            Lm = 44,
+            B = 24,
+            T = 8,
+            pw = W - Lm - 4,
+            ph = H - B - T,
+            bw = pw / hist.length,
+            w = Math.min(22, bw * 0.62);
+          const top = Math.max(1, ...hist.map((h) => h.e));
+          const sc = niceScale(top),
+            mx = sc.top;
+          let sv = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+          for (let i = 0; i <= sc.n; i++) {
+            const y = T + ph - (ph * i) / sc.n;
+            sv += `<line class="grid" x1="${Lm}" x2="${W - 4}" y1="${y}" y2="${y}"/><text x="${Lm - 6}" y="${y + 4}" text-anchor="end">${short(sc.step * i)}</text>`;
+          }
+          hist.forEach((h, i) => {
+            const x = Lm + i * bw + bw / 2 - w / 2;
+            if (h.e > 0)
+              sv += `<rect x="${x}" y="${T + ph - (h.e / mx) * ph}" width="${w}" height="${(h.e / mx) * ph}" rx="2" fill="var(--muted)" opacity="0.35"><title>${rangeLabel(h.a, addDays(h.a, 6))} 支出 ${money(h.e)}</title></rect>`;
+            if (h.f > 0)
+              sv += `<rect x="${x}" y="${T + ph - (h.f / mx) * ph}" width="${w}" height="${(h.f / mx) * ph}" rx="2" fill="var(--warn)"><title>可避免 ${money(h.f)}</title></rect>`;
+            sv += `<rect data-rwgo="${h.a}" x="${Lm + i * bw}" y="${T}" width="${bw}" height="${ph + B}" fill="${h.cur ? "var(--accent)" : "transparent"}" style="opacity:${h.cur ? "var(--hilite)" : 0};cursor:pointer"/>`;
+            if (i % 3 === 2 || h.cur)
+              sv += `<text x="${Lm + i * bw + bw / 2}" y="${H - 7}" text-anchor="middle" ${h.cur ? 'style="fill:var(--ink);font-weight:600"' : ""}>${mdLabel(h.a)}</text>`;
+          });
+          el.innerHTML = sv + "</svg>";
+          api.body.onclick = (ev) => {
+            const nav = ev.target.closest("[data-rw]");
+            if (nav) {
+              const n = addDays(w0, 7 * +nav.dataset.rw);
+              if (n > cur) return;
+              w0 = n;
+              api.refresh();
+              return;
+            }
+            const bar = ev.target.closest("[data-rwgo]");
+            if (bar) {
+              w0 = bar.dataset.rwgo;
+              api.refresh();
+              return;
+            }
+            const row = ev.target.closest("[data-tx]");
+            if (!row) return;
+            const t = findTx(row.dataset.tx, row.dataset.d);
+            if (!t) return;
+            if (t.fl) delete t.fl;
+            else t.fl = 1;
+            putTx(t);
+            rebuild();
+            const keepY = api.body.scrollTop;
+            api.refresh();
+            api.body.scrollTop = keepY;
+          };
+        });
       }
       const ACC_CURS = [
         "TWD",
