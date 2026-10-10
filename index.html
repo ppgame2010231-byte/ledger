@@ -1188,6 +1188,9 @@
       .acgroup + .acgroup h4 {
         border-top: 1px solid var(--line);
       }
+      .acgroup h4 div.gh {
+        cursor: default;
+      }
       .acgroup h4 .gh {
         display: flex;
         align-items: center;
@@ -2999,6 +3002,9 @@
       .acrow .fxbal.neg b {
         color: var(--exp);
       }
+      .acrow .fxbal.pos b {
+        color: var(--inc);
+      }
       .acrow .fxbal small {
         color: var(--muted);
         font-size: 11px;
@@ -3696,8 +3702,16 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "2.3.1";
+      const APP_VERSION = "2.3.2";
       const CHANGELOG = [
+        [
+          "2.3.2",
+          "2026-10-10",
+          [
+            "帳戶群組不再點了就收合（之前一點整組往上縮）；群組名前的小箭頭拿掉",
+            "正負數一律上色：負數紅、正數綠——帳戶餘額、群組合計、淨資產、隱藏帳戶合計、結餘、信用卡餘額、對帳的目前餘額",
+          ],
+        ],
         [
           "2.3.1",
           "2026-10-10",
@@ -3953,6 +3967,8 @@
         const s = a.toLocaleString("en-US", { maximumFractionDigits: dec ? 2 : 0, minimumFractionDigits: 0 });
         return (neg ? "−" : sign && n > 0 ? "+" : "") + s;
       }
+      // colour class for a signed figure: red below zero, green above, nothing at zero
+      const signCls = (v) => (v < 0 ? "exp" : v > 0 ? "inc" : "");
       function short(n) {
         const a = Math.abs(n);
         if (a >= 1e8) return (n / 1e8).toFixed(1).replace(/\.0$/, "") + "億";
@@ -5628,8 +5644,7 @@
         const wan = pref("numFmt") === "wan";
         const fmtN = (n, sign) =>
           wan ? (n < 0 ? "−" : sign && n > 0 ? "+" : "") + short(Math.abs(n)) : money(n, { sign });
-        const netHTML = (net) =>
-          `<span class="num" style="color:${net < 0 ? "var(--exp)" : "var(--ink)"}">${fmtN(net, true)}</span>`;
+        const netHTML = (net) => `<span class="num ${signCls(net)}">${fmtN(net, true)}</span>`;
         // 「昨日 1,980 ▼37%」 — the previous period's spending and the change against it
         const cmpLine = (p, cur, prev) => {
           // 月: against the chosen basis (典型月 by default) instead of only the previous month
@@ -7034,7 +7049,7 @@
         let h = sort ? "" : subtabsHTML("acct");
         if (!sort && curSub("acct") === "總覽") {
           // 總覽: the three totals, the hidden note, one bar per group, what the cards owe
-          h += `<div class="card"><div class="networth"><div><div class="small muted">資產</div><div class="num inc v">${fmtN(pos)}</div></div><div><div class="small muted">負債</div><div class="num exp v">${fmtN(-neg)}</div></div><div><div class="small muted">淨資產</div><div class="num v">${fmtN(pos + neg)}</div></div></div>${
+          h += `<div class="card"><div class="networth"><div><div class="small muted">資產</div><div class="num inc v">${fmtN(pos)}</div></div><div><div class="small muted">負債</div><div class="num exp v">${fmtN(-neg)}</div></div><div><div class="small muted">淨資產</div><div class="num v ${signCls(pos + neg)}">${fmtN(pos + neg)}</div></div></div>${
             hid.length
               ? `<div class="nwnote">含 ${hid.length} 個隱藏帳戶（約 ${short(hidSum)}）· <button class="tapline" data-act="acctShowHid">顯示</button></div>`
               : ""
@@ -7069,7 +7084,7 @@
             const cur = spend(a.name, k),
               prev = spend(a.name, pk);
             h += `<div class="card ccard${a.hidden ? " dim" : ""}"><div class="rowhead"><button class="ccname" data-acc="${esc(a.name)}">${esc(dispAcc(a.name))}${a.hidden ? `<small class="muted"> 已隱藏</small>` : ""} <span class="chev">›</span></button><button class="btn sm" data-act="payCard" data-n="${esc(a.name)}">繳卡費</button></div>
-    <div class="summary" style="margin-top:8px"><div><div class="k">${a.b < 0 ? "欠款" : "餘額"}</div><div class="v num${a.b < 0 ? " exp" : ""}">${fmtN(Math.abs(a.b))}</div></div><div><div class="k">本月刷卡</div><div class="v num">${fmtN(cur)}</div></div><div><div class="k">上月刷卡</div><div class="v num">${fmtN(prev)}</div></div></div></div>`;
+    <div class="summary" style="margin-top:8px"><div><div class="k">${a.b < 0 ? "欠款" : "餘額"}</div><div class="v num ${signCls(a.b)}">${fmtN(Math.abs(a.b))}</div></div><div><div class="k">本月刷卡</div><div class="v num">${fmtN(cur)}</div></div><div><div class="k">上月刷卡</div><div class="v num">${fmtN(prev)}</div></div></div></div>`;
           }
           return h;
         }
@@ -7091,11 +7106,11 @@
           if (!vis.length) return;
           const sum = L.reduce((s, a) => s + a.b, 0); // hidden accounts count too (the group total is the real total)
           const hidN = L.filter((a) => a.hidden).length;
-          const closed = !sort && collapsed.has(g);
+          const closed = false; // (2.3.2) groups always stay open: a tap on the header used to collapse them by surprise
           h += `<div class="acgroup${closed ? " closed" : ""}"><h4>${
             sort
               ? `<span class="gh"><span>${esc(g)}</span><span><button class="sqb" data-act="grpUp" data-g="${esc(g)}" aria-label="${esc(g)} 往上" ${gi === 0 ? "disabled" : ""}>${UP_I}</button><button class="sqb" data-act="grpDown" data-g="${esc(g)}" aria-label="${esc(g)} 往下" ${gi === order.length - 1 ? "disabled" : ""}>${DOWN_I}</button></span></span>`
-              : `<button class="gh" data-act="grpToggle" data-g="${esc(g)}" aria-expanded="${!closed}"><span><span class="chev">▾</span><span>${esc(g)}</span>${hidN && !showHid ? `<small class="muted" style="font-weight:400">含 ${hidN} 個隱藏</small>` : ""}</span><span class="num">${money(sum)}</span></button>`
+              : `<div class="gh"><span><span>${esc(g)}</span>${hidN && !showHid ? `<small class="muted" style="font-weight:400">含 ${hidN} 個隱藏</small>` : ""}</span><span class="num ${signCls(sum)}">${money(sum)}</span></div>`
           }</h4>`;
           h += vis
             .map((a, i) =>
@@ -7103,8 +7118,8 @@
                 ? `<div class="acrow${a.hidden ? " dim" : ""}">${gsel(a)}<span class="nm">${esc(dispAcc(a.name))}</span><button class="sqb" data-act="accEye" data-n="${esc(a.name)}" aria-label="${a.hidden ? "取消隱藏" : "隱藏"} ${esc(dispAcc(a.name))}" aria-pressed="${!!a.hidden}">${a.hidden ? EYEOFF_I : EYE_I}</button><button class="sqb" data-act="accUp" data-n="${esc(a.name)}" aria-label="${esc(dispAcc(a.name))} 往上" ${i === 0 ? "disabled" : ""}>${UP_I}</button><button class="sqb" data-act="accDown" data-n="${esc(a.name)}" aria-label="${esc(dispAcc(a.name))} 往下" ${i === vis.length - 1 ? "disabled" : ""}>${DOWN_I}</button></div>`
                 : `<button class="acrow${a.hidden ? " dim" : ""}" data-acc="${esc(a.name)}"><span class="nm">${esc(dispAcc(a.name))}${a.name === defAcc ? `<small>預設</small>` : ""}${a.hidden ? `<small>已隱藏</small>` : ""}</span>${
                     a.cur && a.bn !== undefined
-                      ? `<span class="num fxbal${a.b < 0 ? " neg" : ""}"><b>${moneyN(a.cur, a.bn)}</b><small>≈ ${money(a.b)}</small></span>`
-                      : `<span class="num" style="font-weight:600;${a.b < 0 ? "color:var(--exp)" : ""}">${money(a.b)}</span>`
+                      ? `<span class="num fxbal${a.b < 0 ? " neg" : a.b > 0 ? " pos" : ""}"><b>${moneyN(a.cur, a.bn)}</b><small>≈ ${money(a.b)}</small></span>`
+                      : `<span class="num ${signCls(a.b)}" style="font-weight:600">${money(a.b)}</span>`
                   }</button>`,
             )
             .join("");
@@ -7112,7 +7127,7 @@
         });
         h += `</div>`;
         if (hid.length && !showHid)
-          h += `<details class="card" id="hidDet"><summary class="muted" style="min-height:40px;display:flex;align-items:center">已隱藏 ${hid.length} 個帳戶 · 合計 ${money(hidSum)}</summary>${hid.map((a) => `<button class="acrow dim" data-acc="${esc(a.name)}"><span class="nm">${esc(dispAcc(a.name))}</span><span class="num">${a.cur ? moneyN(a.cur, a.bn) : money(a.b)}</span></button>`).join("")}</details>`;
+          h += `<details class="card" id="hidDet"><summary class="muted" style="min-height:40px;display:flex;align-items:center">已隱藏 ${hid.length} 個帳戶 · 合計 <b class="num ${signCls(hidSum)}">${money(hidSum)}</b></summary>${hid.map((a) => `<button class="acrow dim" data-acc="${esc(a.name)}"><span class="nm">${esc(dispAcc(a.name))}</span><span class="num ${signCls(a.b)}">${a.cur ? moneyN(a.cur, a.bn) : money(a.b)}</span></button>`).join("")}</details>`;
         else if (showHid && !sort)
           h += `<div class="btnrow" style="justify-content:center"><button class="btn sm" data-act="acctShowHid">收起隱藏帳戶</button></div>`;
         return h;
@@ -9535,7 +9550,7 @@
           const bal = D.bal[name] || 0,
             balN = cur ? D.balN[name] || 0 : bal;
           api.body.innerHTML = `<div class="stack acdetail">
-      <div class="card"><div class="rowhead"><span><div class="small muted">目前餘額${cur ? `（${esc(cur)}）` : ""}${acc.hidden ? " · 已隱藏" : ""}${pref("defaultAcc") === name ? " · 預設帳戶" : ""}</div><div class="num acbal" style="${balN < 0 ? "color:var(--exp)" : ""}">${cur ? moneyN(cur, balN) : money(bal, { dec: true })}</div>${cur ? `<div class="small muted num">≈ NT$ ${money(bal)}　·　匯率 ${rate}</div>` : ""}</span><span class="small muted">${esc(acc.group)}</span></div>
+      <div class="card"><div class="rowhead"><span><div class="small muted">目前餘額${cur ? `（${esc(cur)}）` : ""}${acc.hidden ? " · 已隱藏" : ""}${pref("defaultAcc") === name ? " · 預設帳戶" : ""}</div><div class="num acbal ${signCls(balN)}">${cur ? moneyN(cur, balN) : money(bal, { dec: true })}</div>${cur ? `<div class="small muted num">≈ NT$ ${money(bal)}　·　匯率 ${rate}</div>` : ""}</span><span class="small muted">${esc(acc.group)}</span></div>
         <div class="summary" style="margin-top:12px"><div><div class="k">本月支出</div><div class="num exp">${money(e)}</div></div><div><div class="k">本月收入</div><div class="num inc">${money(i)}</div></div><div><div class="k">本月轉帳</div><div class="num xfer">${money(xi - xo, { sign: true })}</div></div></div></div>
       <div class="card stack" id="aAdjBox" ${adjOpen ? "" : "hidden"}><b>調整餘額</b><div class="field"><label for="aTarget">實際餘額${cur ? `（${esc(cur)}）` : ""}</label><input class="inp num" id="aTarget" inputmode="decimal" value="${r2(balN)}"><span class="small muted">輸入你現在真正的餘額${cur ? `（以 ${esc(cur)} 計）` : ""}，差額會自動補成一筆「餘額調整」。</span></div><div class="btnrow"><button class="btn primary" id="aAdjGo">完成</button><button class="btn" id="aAdjNo">取消</button></div></div>
       ${
@@ -9658,7 +9673,7 @@
                 by[g]
                   .map(
                     (a) =>
-                      `<div class="rrow${a.hidden ? " dim" : ""}" data-row="${esc(a.name)}"><span class="nm"><span>${esc(dispAcc(a.name))}${a.cur ? `<small> ${esc(a.cur)}</small>` : ""}${a.hidden ? `<small> 已隱藏</small>` : ""}</span><small class="num">目前 ${a.cur ? moneyN(a.cur, a.bn) : money(a.b)}</small></span><input class="inp num" inputmode="decimal" data-rn="${esc(a.name)}" value="${esc(vals[a.name] ?? "")}" placeholder="${r2(a.cur ? a.bn : a.b)}" aria-label="${esc(dispAcc(a.name))} 的實際餘額${a.cur ? `（${esc(a.cur)}）` : ""}"><button class="sqb" data-neg="${esc(a.name)}" aria-label="${esc(dispAcc(a.name))} 正負切換">±</button></div>`,
+                      `<div class="rrow${a.hidden ? " dim" : ""}" data-row="${esc(a.name)}"><span class="nm"><span>${esc(dispAcc(a.name))}${a.cur ? `<small> ${esc(a.cur)}</small>` : ""}${a.hidden ? `<small> 已隱藏</small>` : ""}</span><small class="num">目前 <span class="${signCls(a.cur ? a.bn : a.b)}">${a.cur ? moneyN(a.cur, a.bn) : money(a.b)}</span></small></span><input class="inp num" inputmode="decimal" data-rn="${esc(a.name)}" value="${esc(vals[a.name] ?? "")}" placeholder="${r2(a.cur ? a.bn : a.b)}" aria-label="${esc(dispAcc(a.name))} 的實際餘額${a.cur ? `（${esc(a.cur)}）` : ""}"><button class="sqb" data-neg="${esc(a.name)}" aria-label="${esc(dispAcc(a.name))} 正負切換">±</button></div>`,
                   )
                   .join(""),
             )
