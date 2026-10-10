@@ -1608,8 +1608,9 @@
       }
       .rec .rh .seg button {
         flex: 1;
-        min-height: 40px;
+        min-height: 42px;
         padding: 6px 10px;
+        font-size: 15px;
       }
       .amount {
         display: flex;
@@ -1641,7 +1642,7 @@
       }
       .ptag {
         flex: none;
-        height: 40px;
+        height: 46px;
         padding: 0 11px;
         border-radius: 10px;
         background: var(--surface2);
@@ -1683,7 +1684,7 @@
       .amount .val {
         font-family: var(--f-num);
         font-weight: 600;
-        font-size: 30px;
+        font-size: 34px;
         line-height: 1.15;
         white-space: nowrap;
       }
@@ -1734,10 +1735,15 @@
       .catsel {
         flex: none;
         display: grid;
-        grid-template-columns: 36px minmax(0, 1.1fr) minmax(0, 1fr);
-        gap: 8px;
+        grid-template-columns: 40px minmax(0, 1.1fr) minmax(0, 1fr);
+        gap: 10px;
         align-items: center;
-        margin: 0 0 10px;
+        margin: 0 0 12px;
+      }
+      .catsel .badge {
+        width: 40px;
+        height: 40px;
+        font-size: 15px;
       }
       .csel {
         position: relative;
@@ -1746,9 +1752,9 @@
       .csel select {
         appearance: none;
         -webkit-appearance: none;
-        height: 44px;
+        height: 48px;
         padding: 0 30px 0 12px;
-        font-size: 15px;
+        font-size: 16px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -2011,13 +2017,13 @@
       .recfields {
         display: grid;
         grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-        gap: 8px;
+        gap: 10px;
         padding: 10px 16px 8px;
       }
       .recfields .inp {
-        height: 40px;
-        font-size: 14px;
-        padding: 0 10px;
+        height: 46px;
+        font-size: 16px;
+        padding: 0 12px;
       }
       .accw {
         position: relative;
@@ -2069,12 +2075,12 @@
         border: 1px solid var(--line);
         border-radius: 10px;
         background: var(--surface);
-        height: 40px;
+        height: 46px;
         min-width: 0;
       }
       .datef button {
-        width: 40px;
-        height: 38px;
+        width: 44px;
+        height: 44px;
         color: var(--muted);
         flex: none;
         font-size: 16px;
@@ -2098,12 +2104,12 @@
         margin-top: auto; /* the fields group under the amount; the keypad stays within thumb reach */
       }
       .keys button {
-        height: 52px;
+        height: 56px;
         border-radius: 12px;
         background: var(--surface);
         box-shadow: var(--shadow);
         font-family: var(--f-num);
-        font-size: 20px;
+        font-size: 23px;
         font-weight: 500;
       }
       .keys button.op {
@@ -2115,13 +2121,13 @@
         background: var(--accent);
         color: var(--accent-ink);
         font-family: var(--f-body);
-        font-size: 16px;
+        font-size: 17px;
         font-weight: 700;
       }
       .keys .again {
         background: var(--surface2);
         font-family: var(--f-body);
-        font-size: 14px;
+        font-size: 15px;
         font-weight: 600;
         color: var(--ink);
       }
@@ -2138,7 +2144,7 @@
         padding: 4px 16px 10px;
       }
       .rec.short .keys button {
-        height: 40px;
+        height: 46px;
       }
       .rec.short .amount {
         margin-bottom: 8px;
@@ -2985,6 +2991,31 @@
         color: var(--muted);
         font-size: 11px;
       }
+      .searchbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        min-height: 44px;
+        padding: 0 14px;
+        border-radius: 12px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 14.5px;
+        text-align: left;
+        margin-bottom: 10px;
+      }
+      .searchbar .mi {
+        display: grid;
+        place-items: center;
+        width: 20px;
+        height: 20px;
+      }
+      .searchbar .mi svg {
+        width: 18px;
+        height: 18px;
+      }
       .rrow .nm small {
         color: var(--muted);
         font-size: 12px;
@@ -3124,8 +3155,18 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "1.8.0";
+      const APP_VERSION = "1.9.0";
       const CHANGELOG = [
+        [
+          "1.9.0",
+          "2026-10-10",
+          [
+            "依你的回答調整：記帳頁只剩一種版面（拿掉 簡易／完整、最近快捷列、備註店家建議列），欄位與鍵盤加大",
+            "記帳時帳戶固定用預設帳戶（自動選了近 90 天最常用的那個，可在 設定 改）；分類不再預選，直接下拉",
+            "明細不再左滑出現複製／刪除，改在點進帳目後的畫面操作",
+            "主頁總覽加上「最近 5 筆」；明細最上面多一條搜尋列，更多 › 管理 也有「搜尋帳目」",
+          ],
+        ],
         [
           "1.8.0",
           "2026-10-10",
@@ -3399,11 +3440,11 @@
          ledger.installHint, ledger.lastAcc, ledger.settingsOpen, ledger.acctCollapsed. */
       const DEFAULT_PREFS = {
         defaultAcc: "", // "" = 上次用的
-        accMode: "byCategory", // "default" | "last" | "byCategory"
+        accMode: "default", // "default" | "last" | "byCategory"
         afterSave: "close", // "close" | "stay"
-        suggestTime: true, // 時段推薦列
-        suggestNotes: true, // 常用備註列
-        autoAcc: true, // 選分類時自動換帳戶
+        suggestTime: false, // 時段推薦列（記帳頁的「最近」快捷列）
+        suggestNotes: false, // 常用備註列
+        autoAcc: false, // 選分類時自動換帳戶
         projField: "auto", // "auto" | "always" | "never"
         summary: ["cmp", "today", "streak", "budget"], // 摘要卡額外顯示的片段
         numFmt: "full", // "full" | "wan"
@@ -3413,7 +3454,7 @@
         backupRemind: "weekly", // weekly | monthly | never
         hideZero: false, // 帳戶頁隱藏餘額 0 的帳戶
         stayMonth: true, // 記到別的月份後留在目前月份
-        preselect: "suggest", // 開啟記帳畫面時的分類："suggest" 依時段推薦 | "last" 上一筆 | "none" 不預選
+        preselect: "none", // 開啟記帳畫面時的分類："suggest" 依時段推薦 | "last" 上一筆 | "none" 不預選
         noteEnterSaves: true, // 備註鍵盤按「完成」就儲存
         accRecent: true, // 帳戶選單最上面加一組「常用」
         defaultCur: "TWD", // 預設幣別
@@ -3869,6 +3910,33 @@
         return `記了 ${D.count.toLocaleString()} 筆了，還沒備份過。帳只在這支手機上，建議${freq === "monthly" ? "每月" : "每週"}備份一次。`;
       }
 
+      // 1.9.0: a ledger set up before this version gets the speed-first defaults once (the owner's answers);
+      // every one of them is still a normal Settings item afterwards
+      function tuneOnce() {
+        if ((S.meta.tune || 0) >= 2) return;
+        S.meta.tune = 2;
+        if (!S.hasData) {
+          saveMeta();
+          return;
+        }
+        setPref("suggestTime", false);
+        setPref("suggestNotes", false);
+        setPref("autoAcc", false);
+        setPref("preselect", "none");
+        setPref("afterSave", "close");
+        setPref("startTab", "home");
+        setPref("hideZero", false);
+        // the fixed account: the one most expenses went through in the last 90 days
+        if (!pref("defaultAcc") || !S.meta.accounts.some((a) => a.name === pref("defaultAcc") && !a.hidden)) {
+          const since = addDays(todayStr(), -90),
+            cnt = {};
+          for (const t of D.tx) if (t.t === "e" && t.d >= since) cnt[t.acc] = (cnt[t.acc] || 0) + 1;
+          const best = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0];
+          if (best) setPref("defaultAcc", best[0]);
+        }
+        setPref("accMode", pref("defaultAcc") ? "default" : "last");
+        saveMeta();
+      }
       async function boot() {
         rebuild();
         render();
@@ -3880,6 +3948,10 @@
           : "home";
         S.rep.period = ["m", "y", "a"].includes(pref("reportPeriod")) ? pref("reportPeriod") : "m";
         rebuild();
+        tuneOnce();
+        S.tab = ["home", "list", "cal", "report", "acct"].includes(pref("startTab"))
+          ? pref("startTab")
+          : "home";
         render();
         try {
           if (navigator.storage && navigator.storage.persist) S.persisted = await navigator.storage.persist();
@@ -4081,105 +4153,7 @@
       $("#verBtn").textContent = "v" + APP_VERSION;
       $("#verBtn").onclick = () => openAbout();
       $("#mToday").onclick = () => gotoMonth(mkey(todayStr()));
-      // swipe a row left to reveal 複製 / 刪除
-      (() => {
-        const v = document.getElementById("view");
-        let w = null,
-          x0 = 0,
-          y0 = 0,
-          base = 0,
-          lock = null;
-        // put a row back where it was (after a cancelled or interrupted drag)
-        const reset = (row) => {
-          if (!row) return;
-          row.classList.remove("drag");
-          row.querySelectorAll(".tx,.txa").forEach((el) => (el.style.transform = ""));
-        };
-        v.addEventListener(
-          "touchstart",
-          (e) => {
-            const row = e.target.closest(".txw");
-            v.querySelectorAll(".txw.open").forEach((o) => {
-              if (o !== row) o.classList.remove("open");
-            });
-            // a previous gesture may have left a row mid-drag or flagged as swiped
-            v.querySelectorAll(".txw.drag").forEach(reset);
-            v.querySelectorAll(".txw[data-swiped]").forEach((o) => {
-              if (o !== row) delete o.dataset.swiped;
-            });
-            if (!row) {
-              w = null;
-              return;
-            }
-            w = row;
-            const t = e.touches[0];
-            x0 = t.clientX;
-            y0 = t.clientY;
-            lock = null;
-            base = row.classList.contains("open") ? -144 : 0;
-          },
-          { passive: true },
-        );
-        v.addEventListener(
-          "touchmove",
-          (e) => {
-            if (!w) return;
-            const t = e.touches[0],
-              dx = t.clientX - x0,
-              dy = t.clientY - y0;
-            // a clearly sideways move opens the row; anything close to vertical is a scroll
-            if (lock === null && (Math.abs(dx) > 10 || Math.abs(dy) > 8))
-              lock = Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.5 ? "x" : "y";
-            if (lock !== "x") return;
-            w.classList.add("drag");
-            const off = Math.max(-170, Math.min(0, base + dx));
-            w.querySelectorAll(".tx,.txa").forEach((el) => (el.style.transform = `translateX(${off}px)`));
-          },
-          { passive: true },
-        );
-        v.addEventListener(
-          "touchend",
-          (e) => {
-            if (!w) return;
-            const row = w;
-            if (lock === "x") {
-              const dx = e.changedTouches[0].clientX - x0;
-              const shouldOpen = base + dx < -60;
-              row.classList.remove("drag");
-              row.querySelectorAll(".tx,.txa").forEach((el) => (el.style.transform = ""));
-              row.classList.toggle("open", shouldOpen);
-              row.dataset.swiped = "1";
-              setTimeout(() => {
-                delete row.dataset.swiped;
-              }, 350);
-            }
-            w = null;
-          },
-          { passive: true },
-        );
-        // the system took the touch (notification, back gesture, call): drop the drag cleanly
-        v.addEventListener(
-          "touchcancel",
-          () => {
-            reset(w);
-            w = null;
-            lock = null;
-          },
-          { passive: true },
-        );
-        // a swipe should not also count as a tap on the row (the revealed buttons still work)
-        v.addEventListener(
-          "click",
-          (e) => {
-            const r = e.target.closest(".txw");
-            if (r && r.dataset.swiped && !e.target.closest(".txa")) {
-              e.stopPropagation();
-              e.preventDefault();
-            }
-          },
-          true,
-        );
-      })();
+      // (1.9.0) rows no longer swipe: 複製／刪除 live in the entry's own sheet
       /* ========== sub-pages: a second-level bar under the header, one job per page ========== */
       // Settings offers a default per tab (pref "defaultSub": {tab: id}); the device remembers the last one
       const SUBPAGES = {
@@ -4407,7 +4381,7 @@
           } else amtHTML = "⇄ " + money(v, { dec: true });
         } else amtHTML = money(amt, { sign: t.t === "i" || (t.t === "a" && v > 0), dec: true });
         const mk = opt.mark;
-        return `<div class="txw"><div class="txa" aria-hidden="true"><button class="tdup" data-act="txdup" data-id="${esc(t.id)}" data-d="${t.d}" tabindex="-1">複製</button><button class="tdel" data-act="txdel" data-id="${esc(t.id)}" data-d="${t.d}" tabindex="-1">刪除</button></div><button class="tx" data-tx="${esc(t.id)}" data-d="${t.d}">
+        return `<div class="txw"><button class="tx" data-tx="${esc(t.id)}" data-d="${t.d}">
     <span class="badge" style="--c:${L.color}">${esc(L.ch)}</span>
     <span class="mid"><div class="t1">${mk ? markHTML(title, mk) : esc(title)}${t.rec ? ' <span class="muted small">↻</span>' : ""}</div><div class="t2">${mk ? markHTML(bits.join(" · "), mk) : esc(bits.join(" · "))}</div></span>
     <span class="amt ${cls}"><span>${amtHTML}</span>${fx}${opt.extra || ""}</span></button></div>`;
@@ -4644,6 +4618,12 @@
             ? `連續記帳 <b>${D.streak}</b> 天 · 今天 <b>${n}</b> 筆`
             : `${D.streak ? `連續記帳 <b>${D.streak}</b> 天 · ` : ""}<button class="tapline" data-act="addToday">今天還沒記帳，記一筆 ›</button>`
         }</span></div></div>`;
+        // the last five entries (newest first), each with its date; tap → that entry
+        const recent = D.tx.slice(-5).reverse();
+        if (recent.length)
+          h += `<section class="day"><div class="dayhead"><span><b>最近 5 筆</b></span><button class="tapline" data-act="goList">本月全部 ›</button></div>${recent
+            .map((t) => txRow(t, { extra: `<small class="num muted">${esc(mdLabel(t.d))}</small>` }))
+            .join("")}</section>`;
         return h;
       }
       // 主頁 charts: 日／週 use single-series bars with the trend chart's geometry; 月／年 reuse drawTrend
@@ -4840,6 +4820,7 @@
             list.length ? `本月 <b>${list.length}</b> 筆 · <b>${days}</b> 天有記帳` : "這個月沒有帳",
           );
         }
+        h += `<button class="searchbar" data-act="search" aria-label="搜尋帳目"><span class="mi">${svgI("search")}</span><span>搜尋帳目：備註、金額、分類、帳戶…</span></button>`;
         h += `<div class="card slim"><div class="meta-line"><span class="st"${plain ? "" : ' style="overflow:visible"'}>${parts.join(" · ")}</span><button class="tapline lfbtn" data-act="lfilter" aria-expanded="${!!S.listFilterOpen}" aria-controls="lfsel">篩選 ▾</button></div>`;
         h += pills;
         h += `<div class="fsel" id="lfsel" ${S.listFilterOpen ? "" : "hidden"}>${listFilterSelects()}</div></div>`;
@@ -6148,7 +6129,7 @@
           lb = /^\d{4}-\d{2}-\d{2}$/.test(String(S.meta.lastBackup || ""))
             ? S.meta.lastBackup.replace(/-/g, "/")
             : "";
-        return `<div class="mh">管理</div><div class="menu">${it("budgets", "budget", "預算", S.meta.budgets?.total ? "每月 " + money(S.meta.budgets.total) : "還沒設定")}${it("recurring", "rec", "定期記帳", rc ? rc + " 筆" : "房租、電話費這類每月固定的帳")}${it("projects", "proj", "專案", pj ? pj + " 個專案" : "一趟旅行、一次裝修的花費集中看")}${it("cats", "cat", "分類", "新增、排序、改名、顏色")}</div>
+        return `<div class="mh">管理</div><div class="menu">${it("budgets", "budget", "預算", S.meta.budgets?.total ? "每月 " + money(S.meta.budgets.total) : "還沒設定")}${it("recurring", "rec", "定期記帳", rc ? rc + " 筆" : "房租、電話費這類每月固定的帳")}${it("projects", "proj", "專案", pj ? pj + " 個專案" : "一趟旅行、一次裝修的花費集中看")}${it("cats", "cat", "分類", "新增、排序、改名、顏色")}${it("search", "search", "搜尋帳目", "依備註、金額、分類、帳戶找舊帳")}</div>
   <div class="mh">資料</div><div class="menu">${it("backup", "save", "備份", lb ? "上次備份 " + lb : "存一份到 iCloud 雲碟或「檔案」App")}${it("restore", "imp", "還原備份", "")}${it("import", "imp", "從 CWMoney 匯入", "把 CWMoney 匯出的檔案帶進來")}${it("export", "exp", "匯出成 CWMoney 格式", "可以匯回 CWMoney，或用試算表打開")}${it("recon", "acct", "對帳", "一次填好所有帳戶的實際餘額，可分多次做")}</div>
   <div class="mh">設定</div><div class="menu">${it("settings", "set", "設定", "外觀、啟動、記帳畫面、明細與報表、帳戶與分類、資料")}${it("about", "info", "關於", "v" + APP_VERSION + "、資料存在哪裡、加到主畫面", true)}</div>
   <p class="small muted" style="text-align:center;margin-top:18px">${S.mode === "sample" ? "範例模式，不會儲存" : "資料只存在這支手機"}　·　${D.count.toLocaleString()} 筆${D.first ? `，自 ${D.first.slice(0, 7).replace("-", "/")} 起` : ""}</p>`;
@@ -6424,6 +6405,13 @@
               render();
             },
             recon: openReconcile,
+            goList: () => {
+              S.month = mkey(todayStr());
+              S.tab = "list";
+              setSub("list", "帳目");
+              render();
+              window.scrollTo(0, 0);
+            },
             reconHide: () => {
               lsSet("ledger.reconHide", "1");
               render();
@@ -6764,7 +6752,7 @@
           }
           return init;
         };
-        let mode = recMode();
+        let mode = "full"; // one layout since 1.9.0 (the 簡易 sheet and its toggle are gone)
         const lastAcc = lsGet("ledger.lastAcc", null);
         const visible = (n) => !!n && S.meta.accounts.some((a) => a.name === n && !a.hidden);
         const startAcc = () => {
@@ -7148,12 +7136,7 @@
                 .map(([k, l]) => `<button data-type="${k}" aria-pressed="${R.t === k}">${l}</button>`)
                 .join("")}</div>`
         }
-                <div class="seg rmode" role="group" aria-label="記帳畫面">${[
-                  ["simple", "簡易"],
-                  ["full", "完整"],
-                ]
-                  .map(([k, l]) => `<button data-mode="${k}" aria-pressed="${mode === k}">${l}</button>`)
-                  .join("")}</div></div>
+                </div>
       ${editing && tx.ct ? `<div class="edinfo">記於 20${esc(String(tx.ct).slice(0, 14))}</div>` : ""}
       <div class="amount">
         ${R.t === "a" ? `<button class="chip" id="rNeg" aria-pressed="${!!R.neg}">${R.neg ? "減少" : "增加"}</button>` : ""}
@@ -9071,20 +9054,7 @@
         "rec",
         "記帳畫面",
         "預設帳戶、記完一筆後、推薦與常用備註",
-        row(
-          "記帳畫面",
-          select(
-            "recMode",
-            [
-              ["", "自動（有帳就完整）"],
-              ["simple", "簡易"],
-              ["full", "完整"],
-            ],
-            pref("recMode") || "",
-          ),
-          "畫面上的「簡易／完整」切換鍵會記住這支手機的選擇，優先於這裡",
-        ) +
-          colrow("預設帳戶", accSel, "「依分類自動選」會用這個分類最常搭配的帳戶") +
+        colrow("預設帳戶", accSel, "「依分類自動選」會用這個分類最常搭配的帳戶") +
           row(
             "預設幣別",
             select(
