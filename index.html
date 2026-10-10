@@ -3702,8 +3702,13 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "2.3.2";
+      const APP_VERSION = "2.3.3";
       const CHANGELOG = [
+        [
+          "2.3.3",
+          "2026-10-10",
+          ["修正：從帳戶頁（或任何捲到下面的頁面）點開一個項目再關閉，頁面不再跳回最上面"],
+        ],
         [
           "2.3.2",
           "2026-10-10",
@@ -4905,6 +4910,7 @@
       }
       function render() {
         tabAlias();
+        if (lockedY !== null && !$("#sheets").children.length) unlockScroll(); // a sheet removed by other means
         document
           .querySelectorAll(".tabs button")
           .forEach((b) => b.setAttribute("aria-current", String(b.dataset.tab === S.tab)));
@@ -6114,7 +6120,7 @@
       // account order / hide: the accounts page owns the sort mode; from Settings we just go there
       function goAcctSort() {
         for (const s of [...$("#sheets").children]) s.remove();
-        document.body.style.overflow = "";
+        unlockScroll();
         S.tab = "acct";
         render();
         window.scrollTo(0, 0);
@@ -7813,12 +7819,40 @@
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
       const BI =
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>';
+      // While a sheet is open the page behind must not scroll — but iOS forgets the scroll position when
+      // body gets overflow:hidden, so the page is pinned with position:fixed at its current offset and put
+      // back exactly there when the last sheet closes (otherwise closing a sheet "jumped" to the top).
+      let lockedY = null;
+      function lockScroll() {
+        if (lockedY !== null) return;
+        lockedY = window.scrollY;
+        const b = document.body;
+        b.style.position = "fixed";
+        b.style.top = -lockedY + "px";
+        b.style.left = "0";
+        b.style.right = "0";
+        b.style.width = "100%";
+        b.style.overflow = "hidden";
+      }
+      function unlockScroll() {
+        if (lockedY === null) return;
+        const y = lockedY;
+        lockedY = null;
+        const b = document.body;
+        b.style.position = "";
+        b.style.top = "";
+        b.style.left = "";
+        b.style.right = "";
+        b.style.width = "";
+        b.style.overflow = "";
+        window.scrollTo(0, y);
+      }
       // close a sheet with a slide-down; the page scroll comes back once no live sheet is left
       function dismissSheet(el) {
         if (!el || el.dataset.closing) return;
         el.dataset.closing = "1";
         const live = () => [...$("#sheets").children].filter((c) => !c.dataset.closing).length;
-        document.body.style.overflow = live() ? "hidden" : "";
+        if (!live()) unlockScroll();
         const done = () => el.remove();
         if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
           done();
@@ -7838,7 +7872,7 @@
         const close = () => dismissSheet(el);
         el.querySelector("[data-close]").onclick = close;
         pullDown(el, close);
-        document.body.style.overflow = "hidden";
+        lockScroll();
         const api = { el, body: el.querySelector(".sb"), close, refresh: () => build(api) };
         build(api);
         return api;
@@ -8140,7 +8174,7 @@
         el.setAttribute("role", "dialog");
         el.setAttribute("aria-label", editing ? "編輯帳目" : "記一筆");
         $("#sheets").appendChild(el);
-        document.body.style.overflow = "hidden";
+        lockScroll();
         document.body.classList.add("rec-open");
         const close = () => {
           document.body.classList.remove("rec-open");
