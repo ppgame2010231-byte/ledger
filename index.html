@@ -2894,6 +2894,22 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      .acrow .fxbal {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        line-height: 1.15;
+      }
+      .acrow .fxbal b {
+        font-weight: 600;
+      }
+      .acrow .fxbal.neg b {
+        color: var(--exp);
+      }
+      .acrow .fxbal small {
+        color: var(--muted);
+        font-size: 11px;
+      }
       .rrow .nm small {
         color: var(--muted);
         font-size: 12px;
@@ -3033,8 +3049,17 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "1.6.2";
+      const APP_VERSION = "1.7.0";
       const CHANGELOG = [
+        [
+          "1.7.0",
+          "2026-10-10",
+          [
+            "外幣帳戶改以自己的幣別顯示：帳戶列表、帳戶頁、每筆後的餘額、對帳和調整餘額都用 US$／¥ 等原幣，台幣約值小字附在旁邊",
+            "編輯帳戶多了「幣別」和「匯率」；匯率沒填就用最近一筆的匯率。帳戶名稱含美金、日幣、澳門、港幣…會自動辨識",
+            "外幣帳戶的起始餘額與餘額調整都以原幣計，淨資產仍以台幣合計",
+          ],
+        ],
         [
           "1.6.2",
           "2026-10-10",
@@ -3429,19 +3454,61 @@
         const tx = allTx().sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : (a.ts || 0) - (b.ts || 0)));
         const bal = {},
           byMonth = {};
-        for (const a of S.meta.accounts) bal[a.name] = +a.init || 0;
+        // foreign-currency accounts: a second balance in the account's own currency (balN) and the rate
+        // that converts it to TWD (accRate: the account's own setting, else the latest rate seen on it)
+        const fx = {}, // name → currency
+          accRate = {},
+          balN = {};
+        const isFx = (n) => {
+          if (!(n in fx)) fx[n] = accCur(n) || "";
+          return fx[n];
+        };
+        for (const t of tx) {
+          if (t.r && +t.r !== 1 && isFx(t.acc)) accRate[t.acc] = +t.r;
+          if (t.t === "x" && isFx(t.to)) {
+            const ir = t.ir != null ? +t.ir : t.r;
+            if (ir && +ir !== 1) accRate[t.to] = +ir;
+          }
+        }
+        for (const a of S.meta.accounts) if (+a.rate > 0 && isFx(a.name)) accRate[a.name] = +a.rate;
+        const rateOf = (n) => accRate[n] || 1;
+        // one leg in the account's own currency: the recorded 金額 is always in that currency (CWMoney's rule;
+        // the record page switches to the account's currency too), so no conversion is involved
+        const nat = (n, a, r, v) => +a || 0;
+        for (const a of S.meta.accounts) {
+          const init = +a.init || 0;
+          if (isFx(a.name)) {
+            balN[a.name] = init;
+            bal[a.name] = r2(init * rateOf(a.name));
+          } else bal[a.name] = init;
+        }
         const excl = new Set(S.meta.excl || []);
         const days = new Set();
         for (const t of tx) {
           const v = sub(t);
           if (!(t.acc in bal)) bal[t.acc] = 0;
-          if (t.t === "e") bal[t.acc] -= v;
-          else if (t.t === "i") bal[t.acc] += v;
-          else if (t.t === "x") {
+          const f1 = isFx(t.acc);
+          if (f1 && !(t.acc in balN)) balN[t.acc] = 0;
+          if (t.t === "e") {
             bal[t.acc] -= v;
+            if (f1) balN[t.acc] -= nat(t.acc, t.a, t.r, v);
+          } else if (t.t === "i") {
+            bal[t.acc] += v;
+            if (f1) balN[t.acc] += nat(t.acc, t.a, t.r, v);
+          } else if (t.t === "x") {
+            bal[t.acc] -= v;
+            if (f1) balN[t.acc] -= nat(t.acc, t.a, t.r, v);
             if (!(t.to in bal)) bal[t.to] = 0;
-            bal[t.to] += t.iv != null ? +t.iv : t.ia != null ? r2(t.ia * t.ir) : v;
-          } else bal[t.acc] += v;
+            const vin = t.iv != null ? +t.iv : t.ia != null ? r2(t.ia * t.ir) : v;
+            bal[t.to] += vin;
+            if (isFx(t.to)) {
+              if (!(t.to in balN)) balN[t.to] = 0;
+              balN[t.to] += t.ia != null ? nat(t.to, t.ia, t.ir, vin) : nat(t.to, t.a, t.r, vin);
+            }
+          } else {
+            bal[t.acc] += v;
+            if (f1) balN[t.acc] += nat(t.acc, t.a, t.r, v);
+          }
           const k = mkey(t.d);
           const M = byMonth[k] || (byMonth[k] = { e: 0, i: 0, n: 0, net: 0 });
           M.n++;
@@ -3493,9 +3560,12 @@
           names.sort((a, b) => (catCount[ty][b] || 0) - (catCount[ty][a] || 0));
           names.forEach((n, i) => (catColor[ty][n] = PALETTE[i % PALETTE.length]));
         }
+        for (const n in balN) balN[n] = r2(balN[n]);
         D = {
           tx,
           bal,
+          balN,
+          accRate,
           byMonth,
           byMonthCat,
           catColor,
@@ -4199,11 +4269,33 @@
         if (t.n && !/^\[[^\]]*\]$/.test(t.n.trim())) bits.push(t.n.replace(/\s*\n\s*/g, " / "));
         if (t.t !== "x" && t.acc !== opt.hideAcc) bits.push(dispAcc(t.acc));
         if (t.p) bits.push("#" + t.p);
-        const fx =
-          t.cur && t.cur !== "TWD" ? `<small>${esc(t.cur)} ${money(t.a, { dec: true })}</small>` : "";
+        let fx = t.cur && t.cur !== "TWD" ? `<small>${esc(t.cur)} ${money(t.a, { dec: true })}</small>` : "";
         let title = L.title,
           amtHTML;
-        if (t.t === "x") {
+        if (opt.cur) {
+          // the page of a foreign-currency account: the amount in that currency leads, NT$ is the small line
+          const nat =
+            t.t === "e"
+              ? -(+t.a || 0)
+              : t.t === "x"
+                ? t.acc === opt.hideAcc
+                  ? -(+t.a || 0)
+                  : +(t.ia != null ? t.ia : t.a) || 0
+                : +t.a || 0;
+          const twd =
+            t.t === "e" || (t.t === "x" && t.acc === opt.hideAcc)
+              ? -v
+              : t.t === "x"
+                ? t.iv != null
+                  ? +t.iv
+                  : t.ia != null
+                    ? r2(t.ia * t.ir)
+                    : v
+                : v;
+          if (t.t === "x") title = t.acc === opt.hideAcc ? `→ ${dispAcc(t.to)}` : `← ${dispAcc(t.acc)}`;
+          amtHTML = moneyN(opt.cur, nat, { sign: nat > 0 });
+          fx = `<small>≈ NT$ ${money(twd, { sign: twd > 0, dec: true })}</small>`;
+        } else if (t.t === "x") {
           if (opt.hideAcc && t.acc === opt.hideAcc) {
             title = `→ ${dispAcc(t.to)}`;
             amtHTML = money(-v, { dec: true });
@@ -5751,14 +5843,18 @@
             .map((a, i) =>
               sort
                 ? `<div class="acrow${a.hidden ? " dim" : ""}">${gsel(a)}<span class="nm">${esc(dispAcc(a.name))}</span><button class="sqb" data-act="accEye" data-n="${esc(a.name)}" aria-label="${a.hidden ? "取消隱藏" : "隱藏"} ${esc(dispAcc(a.name))}" aria-pressed="${!!a.hidden}">${a.hidden ? EYEOFF_I : EYE_I}</button><button class="sqb" data-act="accUp" data-n="${esc(a.name)}" aria-label="${esc(dispAcc(a.name))} 往上" ${i === 0 ? "disabled" : ""}>${UP_I}</button><button class="sqb" data-act="accDown" data-n="${esc(a.name)}" aria-label="${esc(dispAcc(a.name))} 往下" ${i === vis.length - 1 ? "disabled" : ""}>${DOWN_I}</button></div>`
-                : `<button class="acrow${a.hidden ? " dim" : ""}" data-acc="${esc(a.name)}"><span class="nm">${esc(dispAcc(a.name))}${a.name === defAcc ? `<small>預設</small>` : ""}${a.hidden ? `<small>已隱藏</small>` : ""}</span><span class="num" style="font-weight:600;${a.b < 0 ? "color:var(--exp)" : ""}">${money(a.b)}</span></button>`,
+                : `<button class="acrow${a.hidden ? " dim" : ""}" data-acc="${esc(a.name)}"><span class="nm">${esc(dispAcc(a.name))}${a.name === defAcc ? `<small>預設</small>` : ""}${a.hidden ? `<small>已隱藏</small>` : ""}</span>${
+                    a.cur && a.bn !== undefined
+                      ? `<span class="num fxbal${a.b < 0 ? " neg" : ""}"><b>${moneyN(a.cur, a.bn)}</b><small>≈ ${money(a.b)}</small></span>`
+                      : `<span class="num" style="font-weight:600;${a.b < 0 ? "color:var(--exp)" : ""}">${money(a.b)}</span>`
+                  }</button>`,
             )
             .join("");
           h += `</div>`;
         });
         h += `</div>`;
         if (hid.length && !showHid)
-          h += `<details class="card" id="hidDet"><summary class="muted" style="min-height:40px;display:flex;align-items:center">已隱藏 ${hid.length} 個帳戶 · 合計 ${money(hidSum)}</summary>${hid.map((a) => `<button class="acrow dim" data-acc="${esc(a.name)}"><span class="nm">${esc(dispAcc(a.name))}</span><span class="num">${money(a.b)}</span></button>`).join("")}</details>`;
+          h += `<details class="card" id="hidDet"><summary class="muted" style="min-height:40px;display:flex;align-items:center">已隱藏 ${hid.length} 個帳戶 · 合計 ${money(hidSum)}</summary>${hid.map((a) => `<button class="acrow dim" data-acc="${esc(a.name)}"><span class="nm">${esc(dispAcc(a.name))}</span><span class="num">${a.cur ? moneyN(a.cur, a.bn) : money(a.b)}</span></button>`).join("")}</details>`;
         else if (showHid && !sort)
           h += `<div class="btnrow" style="justify-content:center"><button class="btn sm" data-act="acctShowHid">收起隱藏帳戶</button></div>`;
         return h;
@@ -5917,9 +6013,14 @@
             .filter((n) => !names.has(n) && n && n !== "undefined")
             .map((n) => ({ name: n, group: guessGroup(n), init: 0 }));
         }
-        return [...S.meta.accounts, ...D.extraAcc].map((a) =>
-          Object.assign({}, a, { b: D.bal[a.name] || 0 }),
-        );
+        return [...S.meta.accounts, ...D.extraAcc].map((a) => {
+          const c = accCur(a.name);
+          return Object.assign({}, a, {
+            b: D.bal[a.name] || 0,
+            cur: c || "",
+            bn: c && D.balN && a.name in D.balN ? D.balN[a.name] : c ? 0 : undefined,
+          });
+        });
       }
 
       /* ========== view: more ========== */
@@ -6505,10 +6606,43 @@
       }
       // the currency an account is kept in: "USD" for 美金, "" for a TWD account, null for an unknown foreign one
       function accCur(name) {
+        const a = S.meta.accounts.find((x) => x.name === name);
+        if (a && a.cur !== undefined) return a.cur === "TWD" ? "" : a.cur || "";
         const hit = FX_BY_ACC.find(([re]) => re.test(name || ""));
         if (hit) return hit[1];
-        const a = S.meta.accounts.find((x) => x.name === name);
         return a && a.group === "外幣" ? null : "";
+      }
+      // money in an account's own currency: "US$1,234.56", "¥12,000"; TWD accounts fall back to money()
+      const CUR_SYM = {
+        USD: "US$",
+        JPY: "¥",
+        EUR: "€",
+        CNY: "CN¥",
+        HKD: "HK$",
+        KRW: "₩",
+        GBP: "£",
+        AUD: "A$",
+        SGD: "S$",
+        MOP: "MOP$",
+        THB: "฿",
+        CAD: "C$",
+        NZD: "NZ$",
+        VND: "₫",
+        MYR: "RM",
+        PHP: "₱",
+        IDR: "Rp",
+      };
+      function moneyN(cur, n, opt = {}) {
+        if (!cur) return money(n, opt);
+        const sym = CUR_SYM[cur] || cur + " ";
+        const whole = cur === "JPY" || cur === "KRW" || cur === "VND" || cur === "IDR";
+        const s = money(n, Object.assign({ dec: !whole }, opt));
+        return s.startsWith("−") || s.startsWith("+") ? s[0] + sym + s.slice(1) : sym + s;
+      }
+      // what an account page shows as its balance: native for a foreign account, else TWD
+      function accBalText(name) {
+        const c = accCur(name);
+        return c && D.balN && name in D.balN ? moneyN(c, D.balN[name]) : money(D.bal[name] || 0);
       }
       function openRecord(tx, preset = {}) {
         if (S.mode === "sample") {
@@ -7591,6 +7725,33 @@
 
       /* ----- account detail ----- */
       // account page: balance card + this month + dated list with the running balance; editing is behind ⋯
+      // a 餘額調整 entry of `diff` in the account's own currency (foreign: amount + rate, TWD value derived)
+      function adjTx(name, diff) {
+        const t = { id: uid(), d: todayStr(), t: "a", a: diff, acc: name, c: "[餘額調整]", ts: Date.now() };
+        const cur = accCur(name);
+        if (cur) {
+          const r = (D.accRate && D.accRate[name]) || lastRate(cur) || 1;
+          t.cur = cur;
+          t.r = r;
+          t.v = r2(diff * r);
+        }
+        return t;
+      }
+      const ACC_CURS = [
+        "TWD",
+        "USD",
+        "JPY",
+        "EUR",
+        "CNY",
+        "HKD",
+        "MOP",
+        "KRW",
+        "GBP",
+        "AUD",
+        "SGD",
+        "THB",
+        "CAD",
+      ];
       function openAccount(name) {
         if (!name) {
           openAccountForm(null, null);
@@ -7607,26 +7768,25 @@
           };
           const all = D.tx.filter((t) => t.acc === name || t.to === name);
           const list = all.slice(-limit).reverse();
-          // balance after each row, walking back from today's balance
+          const cur = accCur(name) || "", // "" = a TWD account
+            rate = (D.accRate && D.accRate[name]) || 1;
+          // balance after each row (in the account's own currency), walking back from today's balance
           const balAfter = new Map();
-          let run = D.bal[name] || 0;
+          let run = cur ? D.balN[name] || 0 : D.bal[name] || 0;
+          const nat = (a, r, v) => +a || 0; // 金額 is in the account's own currency
           for (const t of list) {
             balAfter.set(t.id, run);
             const v = sub(t);
-            const d =
-              t.t === "e"
-                ? -v
-                : t.t === "i"
-                  ? v
-                  : t.t === "x"
-                    ? t.acc === name
-                      ? -v
-                      : t.iv != null
-                        ? +t.iv
-                        : t.ia != null
-                          ? r2(t.ia * t.ir)
-                          : v
-                    : v;
+            let d;
+            if (t.t === "e") d = cur ? -nat(t.a, t.r, v) : -v;
+            else if (t.t === "i") d = cur ? nat(t.a, t.r, v) : v;
+            else if (t.t === "x") {
+              if (t.acc === name) d = cur ? -nat(t.a, t.r, v) : -v;
+              else {
+                const vin = t.iv != null ? +t.iv : t.ia != null ? r2(t.ia * t.ir) : v;
+                d = cur ? (t.ia != null ? nat(t.ia, t.ir, vin) : nat(t.a, t.r, vin)) : vin;
+              }
+            } else d = cur ? nat(t.a, t.r, v) : v;
             run = r2(run - d);
           }
           let e = 0,
@@ -7641,19 +7801,21 @@
               if (t.to === name) xi += t.iv != null ? +t.iv : t.ia != null ? r2(t.ia * t.ir) : sub(t);
             }
           }
-          const bal = D.bal[name] || 0;
+          const bal = D.bal[name] || 0,
+            balN = cur ? D.balN[name] || 0 : bal;
           api.body.innerHTML = `<div class="stack acdetail">
-      <div class="card"><div class="rowhead"><span><div class="small muted">目前餘額${acc.hidden ? " · 已隱藏" : ""}${pref("defaultAcc") === name ? " · 預設帳戶" : ""}</div><div class="num acbal" style="${bal < 0 ? "color:var(--exp)" : ""}">${money(bal, { dec: true })}</div></span><span class="small muted">${esc(acc.group)}</span></div>
+      <div class="card"><div class="rowhead"><span><div class="small muted">目前餘額${cur ? `（${esc(cur)}）` : ""}${acc.hidden ? " · 已隱藏" : ""}${pref("defaultAcc") === name ? " · 預設帳戶" : ""}</div><div class="num acbal" style="${balN < 0 ? "color:var(--exp)" : ""}">${cur ? moneyN(cur, balN) : money(bal, { dec: true })}</div>${cur ? `<div class="small muted num">≈ NT$ ${money(bal)}　·　匯率 ${rate}</div>` : ""}</span><span class="small muted">${esc(acc.group)}</span></div>
         <div class="summary" style="margin-top:12px"><div><div class="k">本月支出</div><div class="num exp">${money(e)}</div></div><div><div class="k">本月收入</div><div class="num inc">${money(i)}</div></div><div><div class="k">本月轉帳</div><div class="num xfer">${money(xi - xo, { sign: true })}</div></div></div></div>
-      <div class="card stack" id="aAdjBox" ${adjOpen ? "" : "hidden"}><b>調整餘額</b><div class="field"><label for="aTarget">實際餘額</label><input class="inp num" id="aTarget" inputmode="decimal" value="${r2(bal)}"><span class="small muted">輸入你現在真正的餘額，差額會自動補成一筆「餘額調整」。</span></div><div class="btnrow"><button class="btn primary" id="aAdjGo">完成</button><button class="btn" id="aAdjNo">取消</button></div></div>
+      <div class="card stack" id="aAdjBox" ${adjOpen ? "" : "hidden"}><b>調整餘額</b><div class="field"><label for="aTarget">實際餘額${cur ? `（${esc(cur)}）` : ""}</label><input class="inp num" id="aTarget" inputmode="decimal" value="${r2(balN)}"><span class="small muted">輸入你現在真正的餘額${cur ? `（以 ${esc(cur)} 計）` : ""}，差額會自動補成一筆「餘額調整」。</span></div><div class="btnrow"><button class="btn primary" id="aAdjGo">完成</button><button class="btn" id="aAdjNo">取消</button></div></div>
       ${
         list.length
           ? `<div class="small muted" style="margin:0 4px -4px">金額下方的灰字是記完這筆後的餘額${all.length > list.length ? `　·　顯示最近 ${list.length} 筆` : ""}</div>${dayGroups(
               list,
               {
                 year: true,
-                row: { hideAcc: name },
-                rowExtra: (t) => `<small class="num">${money(balAfter.get(t.id))}</small>`,
+                row: { hideAcc: name, cur: cur || undefined },
+                rowExtra: (t) =>
+                  `<small class="num">${cur ? moneyN(cur, balAfter.get(t.id)) : money(balAfter.get(t.id))}</small>`,
               },
             )}${all.length > list.length ? `<button class="btn morebtn" id="aMore">再顯示 300 筆</button>` : ""}`
           : `<div class="card empty">這個帳戶還沒有帳</div>`
@@ -7715,24 +7877,16 @@
           };
           g("#aAdjGo").onclick = () => {
             const tgt = +g("#aTarget").value;
-            const diff = r2(tgt - (D.bal[name] || 0));
+            const diff = r2(tgt - balN);
             if (!isFinite(tgt) || !diff) {
               toast("餘額沒有差額");
               return;
             }
-            putTx({
-              id: uid(),
-              d: todayStr(),
-              t: "a",
-              a: diff,
-              acc: name,
-              c: "[餘額調整]",
-              ts: Date.now(),
-            });
+            putTx(adjTx(name, diff));
             commit();
             adjOpen = false;
             api.refresh();
-            toast("已調整 " + money(diff, { sign: true }));
+            toast("已調整 " + (cur ? moneyN(cur, diff, { sign: true }) : money(diff, { sign: true })));
           };
           const more = g("#aMore");
           if (more)
@@ -7773,19 +7927,19 @@
                 by[g]
                   .map(
                     (a) =>
-                      `<div class="rrow${a.hidden ? " dim" : ""}" data-row="${esc(a.name)}"><span class="nm"><span>${esc(dispAcc(a.name))}${a.hidden ? `<small> 已隱藏</small>` : ""}</span><small class="num">目前 ${money(a.b)}</small></span><input class="inp num" inputmode="decimal" data-rn="${esc(a.name)}" value="${esc(vals[a.name] ?? "")}" placeholder="${r2(a.b)}" aria-label="${esc(dispAcc(a.name))} 的實際餘額"><button class="sqb" data-neg="${esc(a.name)}" aria-label="${esc(dispAcc(a.name))} 正負切換">±</button></div>`,
+                      `<div class="rrow${a.hidden ? " dim" : ""}" data-row="${esc(a.name)}"><span class="nm"><span>${esc(dispAcc(a.name))}${a.cur ? `<small> ${esc(a.cur)}</small>` : ""}${a.hidden ? `<small> 已隱藏</small>` : ""}</span><small class="num">目前 ${a.cur ? moneyN(a.cur, a.bn) : money(a.b)}</small></span><input class="inp num" inputmode="decimal" data-rn="${esc(a.name)}" value="${esc(vals[a.name] ?? "")}" placeholder="${r2(a.cur ? a.bn : a.b)}" aria-label="${esc(dispAcc(a.name))} 的實際餘額${a.cur ? `（${esc(a.cur)}）` : ""}"><button class="sqb" data-neg="${esc(a.name)}" aria-label="${esc(dispAcc(a.name))} 正負切換">±</button></div>`,
                   )
                   .join(""),
             )
             .join("");
           api.body.innerHTML = `<div class="stack recon">
-      <div class="card stack"><p class="small" style="margin:0">CWMoney 的匯出檔只有帳目，沒有各帳戶的起始餘額，所以匯入後的餘額會和 CWMoney 不同。把 CWMoney 帳戶頁顯示的餘額填到右欄（欠款填負數，用 ± 切換）；沒填的帳戶不會動，可以分好幾次慢慢對；收支報表完全不受影響。</p>
+      <div class="card stack"><p class="small" style="margin:0">CWMoney 的匯出檔只有帳目，沒有各帳戶的起始餘額，所以匯入後的餘額會和 CWMoney 不同。把 CWMoney 帳戶頁顯示的餘額填到右欄（欠款填負數，用 ± 切換；外幣帳戶直接填該幣別的金額）；沒填的帳戶不會動，可以分好幾次慢慢對；收支報表完全不受影響。</p>
         <div class="field"><label for="rMode">差額怎麼處理</label><select class="inp" id="rMode"><option value="init"${mode === "init" ? " selected" : ""}>存成起始餘額（不多一筆帳，建議）</option><option value="adj"${mode === "adj" ? " selected" : ""}>補一筆今天的「餘額調整」</option></select></div></div>
       <div class="card rlist">${rows || `<div class="empty">還沒有帳戶</div>`}</div>
       <div class="btnrow rfoot"><span class="small muted" id="rCnt">還沒有填任何帳戶</span><button class="btn primary" id="rGo" disabled>套用</button></div></div>`;
           const g = (s) => api.body.querySelector(s);
-          const balOf = {};
-          for (const a of acc) balOf[a.name] = a.b;
+          const balOf = {}; // in the account's own currency
+          for (const a of acc) balOf[a.name] = a.cur ? a.bn : a.b;
           // the rows whose typed value differs from the current balance
           const changes = () => {
             const out = [];
@@ -7857,7 +8011,9 @@
                 ts = Date.now();
               for (const c of C) {
                 matAcc(c.name);
-                const t = { id: uid(), d, t: "a", a: c.diff, acc: c.name, c: "[餘額調整]", ts };
+                const t = adjTx(c.name, c.diff);
+                t.d = d;
+                t.ts = ts;
                 putTx(t);
                 made.push(t);
               }
@@ -7889,6 +8045,7 @@
         const acc = isNew
           ? { name: "", group: "銀行", init: 0 }
           : S.meta.accounts.find((a) => a.name === name) || { name, group: guessGroup(name), init: 0 };
+        const cur0 = isNew ? "" : accCur(name) || "";
         openSheet(
           isNew ? "新增帳戶" : "編輯帳戶",
           (api) => {
@@ -7897,11 +8054,23 @@
         <div class="grid2"><div class="field"><label for="aGroup">群組</label><select class="inp" id="aGroup">${groupOrder()
           .map((g) => `<option ${g === acc.group ? "selected" : ""}>${esc(g)}</option>`)
           .join("")}</select></div>
-        <div class="field"><label for="aInit">起始餘額</label><input class="inp num" id="aInit" inputmode="decimal" value="${acc.init || 0}"></div></div>
-        ${isNew ? `<span class="small muted">起始餘額：現在這個帳戶裡有多少。</span>` : `<label class="small" style="display:flex;gap:8px;align-items:center;min-height:40px"><input type="checkbox" id="aHide" ${acc.hidden ? "checked" : ""}> 從帳戶頁隱藏（適合已剪的卡、不用的帳戶）</label>`}
+        <div class="field"><label for="aCur">幣別</label><select class="inp" id="aCur">${[...new Set([...ACC_CURS, cur0 || "TWD"])].map((c) => `<option value="${c}"${c === (cur0 || "TWD") ? " selected" : ""}>${c === "TWD" ? "TWD 台幣" : c}</option>`).join("")}</select></div></div>
+        <div class="grid2"><div class="field"><label for="aInit">起始餘額<span id="aInitCur">${cur0 ? `（${esc(cur0)}）` : ""}</span></label><input class="inp num" id="aInit" inputmode="decimal" value="${acc.init || 0}"></div>
+        <div class="field" id="aRateF" ${cur0 ? "" : "hidden"}><label for="aRate">匯率（1 ${esc(cur0 || "外幣")} = ? 台幣）</label><input class="inp num" id="aRate" inputmode="decimal" value="${acc.rate || (cur0 && ((D.accRate && D.accRate[acc.name]) || lastRate(cur0))) || ""}" placeholder="自動用最近一筆"></div></div>
+        ${isNew ? `<span class="small muted">起始餘額：現在這個帳戶裡有多少；外幣帳戶以該幣別填。</span>` : `<label class="small" style="display:flex;gap:8px;align-items:center;min-height:40px"><input type="checkbox" id="aHide" ${acc.hidden ? "checked" : ""}> 從帳戶頁隱藏（適合已剪的卡、不用的帳戶）</label>`}
         <div class="btnrow"><button class="btn primary" id="aSave">${isNew ? "新增" : "儲存"}</button></div>
       </div></div>`;
             const g = (s) => api.body.querySelector(s);
+            // picking a currency shows the rate field (prefilled from the latest entry in that currency)
+            g("#aCur").onchange = () => {
+              const c = g("#aCur").value;
+              g("#aRateF").hidden = c === "TWD";
+              g("#aInitCur").textContent = c === "TWD" ? "" : `（${c}）`;
+              g("#aRateF").querySelector("label").textContent = `匯率（1 ${c} = ? 台幣）`;
+              if (c !== "TWD" && !g("#aRate").value) g("#aRate").value = lastRate(c) || "";
+            };
+            const curOf = () => (g("#aCur").value === "TWD" ? "" : g("#aCur").value);
+            const rateOf = () => (curOf() && +g("#aRate").value > 0 ? +g("#aRate").value : undefined);
             g("#aSave").onclick = () => {
               const nn = g("#aName").value.trim();
               if (!nn) {
@@ -7913,7 +8082,10 @@
                   toast("已有同名帳戶");
                   return;
                 }
-                S.meta.accounts.push({ name: nn, group: g("#aGroup").value, init: +g("#aInit").value || 0 });
+                const na = { name: nn, group: g("#aGroup").value, init: +g("#aInit").value || 0 };
+                if (curOf() || FX_BY_ACC.some(([re]) => re.test(nn))) na.cur = curOf() || "TWD";
+                if (rateOf()) na.rate = rateOf();
+                S.meta.accounts.push(na);
                 saveMeta();
                 commit();
                 api.close();
@@ -7924,6 +8096,10 @@
               a.group = g("#aGroup").value;
               a.init = +g("#aInit").value || 0;
               a.hidden = g("#aHide").checked || undefined;
+              // keep the currency explicit once it has been looked at, so a renamed account keeps it
+              a.cur = curOf() || "TWD";
+              if (rateOf()) a.rate = rateOf();
+              else delete a.rate;
               if (nn !== name) {
                 if (S.meta.accounts.find((x) => x.name === nn && x !== a)) {
                   toast("已有同名帳戶");
@@ -9150,13 +9326,18 @@
       ];
       const CW_NOPROJ = "無特別專案";
       const FX_BY_ACC = [
-        [/美金|美元|USD/i, "USD"],
+        [/美金|美元|美股|USD/i, "USD"],
         [/日幣|日圓|日元|JPY/i, "JPY"],
-        [/澳門/, "MOP"],
+        [/澳門|MOP/i, "MOP"],
         [/港幣|HKD/i, "HKD"],
-        [/人民幣|CNY/i, "CNY"],
+        [/人民幣|CNY|RMB/i, "CNY"],
         [/歐元|EUR/i, "EUR"],
-        [/韓元|KRW/i, "KRW"],
+        [/韓元|韓幣|KRW/i, "KRW"],
+        [/英鎊|GBP/i, "GBP"],
+        [/澳幣|AUD/i, "AUD"],
+        [/新幣|SGD/i, "SGD"],
+        [/泰銖|THB/i, "THB"],
+        [/加幣|CAD/i, "CAD"],
       ];
       function fxName(acc) {
         for (const [re, c] of FX_BY_ACC) if (re.test(acc)) return c;
