@@ -2863,6 +2863,63 @@
       .ccard.dim .summary .v {
         color: var(--muted);
       }
+
+      /* 對帳: one row per account, the real balance typed on the right */
+      .recon .rlist {
+        padding: 4px 0;
+      }
+      .recon .rlist h4 {
+        margin: 10px 16px 4px;
+        font-size: 13px;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .rrow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px 6px 16px;
+        border-top: 1px solid var(--line);
+      }
+      h4 + .rrow {
+        border-top: 0;
+      }
+      .rrow .nm {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .rrow .nm small {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .rrow .inp {
+        width: 118px;
+        flex: none;
+        text-align: right;
+        height: 40px;
+      }
+      .rrow.changed .inp {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+      .rrow.dim .nm {
+        opacity: 0.6;
+      }
+      .rfoot {
+        position: sticky;
+        bottom: 0;
+        background: var(--bg);
+        padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+        margin: 0 -4px;
+        justify-content: space-between;
+        align-items: center;
+      }
     </style>
   </head>
   <body>
@@ -2976,8 +3033,16 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "1.6.0";
+      const APP_VERSION = "1.6.1";
       const CHANGELOG = [
+        [
+          "1.6.1",
+          "2026-10-10",
+          [
+            "新增「對帳」：帳戶 › ⋯ › 對帳，一次把所有帳戶的實際餘額填好，差額存成起始餘額（或補一筆餘額調整）",
+            "CWMoney 的匯出檔沒有帳戶起始餘額，匯入後帳戶頁會提醒一次，匯入完成也可直接點「填帳戶餘額」",
+          ],
+        ],
         [
           "1.6.0",
           "2026-10-10",
@@ -5651,6 +5716,8 @@
           }
           return h;
         }
+        if (!sort && reconNeeded())
+          h += `<div class="banner"><span class="grow">匯入的帳目沒有帳戶起始餘額，這裡的餘額可能和原本 App 不同。</span><button class="btn sm primary" data-act="recon">對帳</button><button class="btn sm" data-act="reconHide">不用</button></div>`;
         h += `<div class="rowhead acbar"><span class="small muted">${sort ? "調整順序：▲▼ 移動，眼睛是隱藏，左邊換群組" : "全部帳戶"}</span>${
           sort
             ? `<button class="btn sm primary" data-act="acctDone">完成</button>`
@@ -6140,12 +6207,19 @@
                   },
                 },
                 "-",
+                { label: "對帳（填實際餘額）", fn: openReconcile },
                 { label: "新增帳戶", fn: () => openAccount(null) },
                 { label: "轉帳", fn: () => openRecord(null, { t: "x" }) },
               ]),
             acctDone: () => {
               S.acctSort = false;
               render();
+            },
+            recon: openReconcile,
+            reconHide: () => {
+              lsSet("ledger.reconHide", "1");
+              render();
+              toast("之後在帳戶頁的 ⋯ 選單還找得到「對帳」");
             },
             acctShowHid: () => {
               // 「顯示」 on the note opens the hidden-accounts card at the bottom (of the 帳戶 page)
@@ -7665,6 +7739,137 @@
               if (t) openRecord(t);
             }
           };
+        });
+      }
+      // 對帳: CWMoney's export carries no opening balances, so after an import every account starts at 0.
+      // The reader types each account's real balance once; the difference becomes the opening balance
+      // (or one 餘額調整 entry). Income/expense are untouched either way.
+      function reconNeeded() {
+        if (S.meta.reconDone || lsGet("ledger.reconHide")) return false;
+        if (!D || D.count < 50) return false;
+        if (S.meta.accounts.some((a) => +a.init)) return false;
+        return !D.tx.some((t) => t.t === "a" && t.c === "[餘額調整]");
+      }
+      function openReconcile() {
+        let mode = lsGet("ledger.reconMode") === "adj" ? "adj" : "init";
+        const vals = {}; // account name → what was typed (kept across refreshes)
+        openSheet("對帳", (api) => {
+          const acc = accountsWithBal();
+          const by = {};
+          for (const a of acc) (by[a.group] || (by[a.group] = [])).push(a);
+          const rows = groupOrder()
+            .filter((g) => by[g])
+            .map(
+              (g) =>
+                `<h4>${esc(g)}</h4>` +
+                by[g]
+                  .map(
+                    (a) =>
+                      `<div class="rrow${a.hidden ? " dim" : ""}" data-row="${esc(a.name)}"><span class="nm"><span>${esc(dispAcc(a.name))}${a.hidden ? `<small> 已隱藏</small>` : ""}</span><small class="num">目前 ${money(a.b)}</small></span><input class="inp num" inputmode="decimal" data-rn="${esc(a.name)}" value="${esc(vals[a.name] ?? "")}" placeholder="${r2(a.b)}" aria-label="${esc(dispAcc(a.name))} 的實際餘額"><button class="sqb" data-neg="${esc(a.name)}" aria-label="${esc(dispAcc(a.name))} 正負切換">±</button></div>`,
+                  )
+                  .join(""),
+            )
+            .join("");
+          api.body.innerHTML = `<div class="stack recon">
+      <div class="card stack"><p class="small" style="margin:0">CWMoney 的匯出檔只有帳目，沒有各帳戶的起始餘額，所以匯入後的餘額會和 CWMoney 不同。把 CWMoney 帳戶頁顯示的餘額填到右欄（欠款填負數，用 ± 切換）；沒填的帳戶不會動，收支報表完全不受影響。</p>
+        <div class="field"><label for="rMode">差額怎麼處理</label><select class="inp" id="rMode"><option value="init"${mode === "init" ? " selected" : ""}>存成起始餘額（不多一筆帳，建議）</option><option value="adj"${mode === "adj" ? " selected" : ""}>補一筆今天的「餘額調整」</option></select></div></div>
+      <div class="card rlist">${rows || `<div class="empty">還沒有帳戶</div>`}</div>
+      <div class="btnrow rfoot"><span class="small muted" id="rCnt">還沒有填任何帳戶</span><button class="btn primary" id="rGo" disabled>套用</button></div></div>`;
+          const g = (s) => api.body.querySelector(s);
+          const balOf = {};
+          for (const a of acc) balOf[a.name] = a.b;
+          // the rows whose typed value differs from the current balance
+          const changes = () => {
+            const out = [];
+            for (const [name, raw] of Object.entries(vals)) {
+              const str = String(raw).trim().replace(/,/g, "");
+              if (!str) continue;
+              const tgt = +str;
+              if (!isFinite(tgt)) continue;
+              const diff = r2(tgt - (balOf[name] || 0));
+              if (diff) out.push({ name, tgt, diff });
+            }
+            return out;
+          };
+          const refreshFoot = () => {
+            const C = changes();
+            g("#rGo").disabled = !C.length;
+            g("#rGo").textContent = C.length ? `套用到 ${C.length} 個帳戶` : "套用";
+            g("#rCnt").textContent = C.length
+              ? `${C.length} 個帳戶會更新`
+              : Object.values(vals).some((x) => String(x).trim())
+                ? "填的和目前餘額一樣，沒有差額"
+                : "還沒有填任何帳戶";
+            api.body.querySelectorAll(".rrow").forEach((r) => {
+              r.classList.toggle(
+                "changed",
+                C.some((c) => c.name === r.dataset.row),
+              );
+            });
+          };
+          api.body.oninput = (ev) => {
+            const i = ev.target.closest("input[data-rn]");
+            if (!i) return;
+            vals[i.dataset.rn] = i.value;
+            refreshFoot();
+          };
+          api.body.onchange = (ev) => {
+            if (ev.target.id === "rMode") {
+              mode = ev.target.value;
+              lsSet("ledger.reconMode", mode);
+            }
+          };
+          api.body.onclick = (ev) => {
+            const nb = ev.target.closest("button[data-neg]");
+            if (nb) {
+              const i = api.body.querySelector(`input[data-rn="${CSS.escape(nb.dataset.neg)}"]`);
+              let v = i.value.trim() || i.placeholder;
+              v = v.startsWith("-") ? v.slice(1) : "-" + v;
+              if (v === "-0" || v === "0") v = v.replace("0", ""); // a 0 account: just leave the sign to type after
+              i.value = v;
+              i.focus();
+              vals[nb.dataset.neg] = v;
+              refreshFoot();
+              return;
+            }
+          };
+          g("#rGo").onclick = () => {
+            const C = changes();
+            if (!C.length) return;
+            const prev = [],
+              made = [];
+            if (mode === "init") {
+              for (const c of C) {
+                const m = matAcc(c.name);
+                prev.push([m, +m.init || 0]);
+                m.init = r2((+m.init || 0) + c.diff);
+              }
+            } else {
+              const d = todayStr(),
+                ts = Date.now();
+              for (const c of C) {
+                matAcc(c.name);
+                const t = { id: uid(), d, t: "a", a: c.diff, acc: c.name, c: "[餘額調整]", ts };
+                putTx(t);
+                made.push(t);
+              }
+            }
+            S.meta.reconDone = true;
+            saveMeta();
+            commit();
+            api.close();
+            toast(`已更新 ${C.length} 個帳戶的餘額`, {
+              label: "復原",
+              fn: () => {
+                for (const [m, v] of prev) m.init = v;
+                for (const t of made) delTx(t);
+                saveMeta();
+                commit();
+                toast("已復原");
+              },
+            });
+          };
+          refreshFoot();
         });
       }
       // new / edit account form (its own sheet; `parent` is the account page that opened it)
@@ -9329,6 +9534,7 @@
         <div class="small">支出 <b class="num">${c.e.toLocaleString()}</b> 筆（${money(se)}）　收入 <b class="num">${c.i.toLocaleString()}</b> 筆（${money(si)}）　轉帳 <b class="num">${c.x.toLocaleString()}</b> 筆${c.a ? `　餘額調整 <b class="num">${c.a.toLocaleString()}</b> 筆` : ""}</div>
         ${parsed.paired ? `<div class="small muted">轉出、轉入兩列已自動配對成 ${parsed.paired.toLocaleString()} 筆轉帳。</div>` : ""}
         ${parsed.bad ? `<div class="small muted">略過 ${parsed.bad} 列無法辨識</div>` : ""}
+        <div class="small muted" style="margin-top:6px">匯出檔沒有各帳戶的起始餘額；匯入後可在 帳戶 › ⋯ › 對帳 一次填好。</div>
         ${parsed.positiveXfer ? `<div class="banner warn small">轉帳列的金額都是正數，看不出轉出還是轉入，匯入後帳戶餘額可能不準，可以在帳戶頁用「調整餘額」校正。</div>` : ""}
         <div class="scrollx"><table class="prev"><thead><tr><th>日期</th><th>類型</th><th>分類</th><th>帳戶</th><th>金額</th><th>備註</th></tr></thead><tbody>${T.slice(
           -6,
@@ -9399,7 +9605,10 @@
                     .pop() || todayStr(),
                 );
                 render();
-                toast(skipped ? `匯入完成，跳過 ${skipped.toLocaleString()} 筆重複` : "匯入完成");
+                toast(skipped ? `匯入完成，跳過 ${skipped.toLocaleString()} 筆重複` : "匯入完成", {
+                  label: "填帳戶餘額",
+                  fn: openReconcile,
+                });
               } catch (e) {
                 console.error(e);
                 busy = false;
