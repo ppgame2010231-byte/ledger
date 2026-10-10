@@ -3044,6 +3044,34 @@
         height: 48px;
         font-size: 16px;
       }
+      .frow textarea.note {
+        height: 48px;
+        min-height: 48px;
+        max-height: 118px;
+        padding: 12px 12px;
+        line-height: 1.4;
+        resize: none;
+        overflow-y: auto;
+      }
+      .frow:has(textarea.note) {
+        align-items: start;
+      }
+      .frow:has(textarea.note) > label {
+        padding-top: 14px;
+      }
+      .fbody.swap > * {
+        animation: vin-f 0.2s ease-out both;
+      }
+      .sheet.closing {
+        animation: down 0.18s ease-in forwards;
+        pointer-events: none;
+      }
+      @keyframes down {
+        to {
+          transform: translateY(28px);
+          opacity: 0;
+        }
+      }
       .frow .datef {
         width: 100%;
       }
@@ -3544,8 +3572,16 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "2.1.1";
+      const APP_VERSION = "2.1.2";
       const CHANGELOG = [
+        [
+          "2.1.2",
+          "2026-10-10",
+          [
+            "所有畫面變化都有過場：沒有方向的切換（篩選、鑽入分類、切期間…）淡入；彈出畫面關閉時往下滑出；記帳頁切 支出／收入／轉帳／常用 時表單淡入",
+            "備註可以換行：欄位會隨內容長高（最多四行），Enter 是換行",
+          ],
+        ],
         [
           "2.1.1",
           "2026-10-10",
@@ -3871,7 +3907,7 @@
         hideZero: false, // 帳戶頁隱藏餘額 0 的帳戶
         stayMonth: true, // 記到別的月份後留在目前月份
         preselect: "none", // 開啟記帳畫面時的分類："suggest" 依時段推薦 | "last" 上一筆 | "none" 不預選
-        noteEnterSaves: true, // 備註鍵盤按「完成」就儲存
+        noteEnterSaves: false, // （2.1.2 起備註可換行，Enter 是換行；此設定保留給舊備份）
         accRecent: true, // 帳戶選單最上面加一組「常用」
         defaultCur: "TWD", // 預設幣別
         recMode: "", // 記帳畫面預設："" 自動 | "simple" | "full"（裝置上的切換鍵優先）
@@ -4729,10 +4765,12 @@
           v.innerHTML = `<div class="card empty">載入帳本中…</div>`;
           return;
         }
-        v.classList.remove("anim-l", "anim-r", "anim-f"); // a plain re-render (after a save, say) does not replay it
-        if (viewAnim && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        // every change of what is on screen gets a transition: a directional slide when the navigation
+        // says which way, otherwise a short fade-up
+        v.classList.remove("anim-l", "anim-r", "anim-f");
+        if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
           void v.offsetWidth; // restart the animation even when the same class is applied twice in a row
-          v.classList.add("anim-" + viewAnim);
+          v.classList.add("anim-" + (viewAnim || "f"));
         }
         viewAnim = null;
         v.innerHTML = { home: viewHome, list: viewList, report: viewReport, acct: viewAcct, more: viewMore }[
@@ -7513,6 +7551,21 @@
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
       const BI =
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>';
+      // close a sheet with a slide-down; the page scroll comes back once no live sheet is left
+      function dismissSheet(el) {
+        if (!el || el.dataset.closing) return;
+        el.dataset.closing = "1";
+        const live = () => [...$("#sheets").children].filter((c) => !c.dataset.closing).length;
+        document.body.style.overflow = live() ? "hidden" : "";
+        const done = () => el.remove();
+        if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          done();
+          return;
+        }
+        el.classList.add("closing");
+        el.addEventListener("animationend", done, { once: true });
+        setTimeout(done, 260); // in case the animation never fires (hidden tab)
+      }
       function openSheet(title, build, { back = false } = {}) {
         const el = document.createElement("div");
         el.className = "sheet";
@@ -7520,10 +7573,7 @@
         el.setAttribute("aria-label", title);
         el.innerHTML = `<div class="grab" style="margin-top:6px"></div><div class="sh"><button class="iconbtn" data-close aria-label="關閉">${back ? BI : XI}</button><h2>${esc(title)}</h2><span style="width:40px"></span></div><div class="sb"></div>`;
         $("#sheets").appendChild(el);
-        const close = () => {
-          el.remove();
-          document.body.style.overflow = $("#sheets").children.length ? "hidden" : "";
-        };
+        const close = () => dismissSheet(el);
         el.querySelector("[data-close]").onclick = close;
         pullDown(el, close);
         document.body.style.overflow = "hidden";
@@ -7580,10 +7630,7 @@
           if (!s) return;
           const x = s.querySelector("[data-close]");
           if (x) x.click();
-          else {
-            s.remove();
-            document.body.style.overflow = $("#sheets").children.length ? "hidden" : "";
-          }
+          else dismissSheet(s);
         }
       });
 
@@ -7834,9 +7881,8 @@
         document.body.style.overflow = "hidden";
         document.body.classList.add("rec-open");
         const close = () => {
-          el.remove();
           document.body.classList.remove("rec-open");
-          document.body.style.overflow = $("#sheets").children.length ? "hidden" : "";
+          dismissSheet(el);
         };
         // account <select>: 「常用」 (top 5 of the last 90 days) first, then the user's groups; no balances in the option text
         const accOpts = (sel) => {
@@ -8085,6 +8131,8 @@
           }</div>`;
         }
         function draw() {
+          const swap = R.swap;
+          R.swap = false;
           R.noting = false; // a full redraw replaces the note field, so note-focus mode ends here
           const isX = R.t === "x" || R.t === "a";
           // 簡易: amount, categories, account, note, keys — no chips, no search, no 更多, date only when it matters
@@ -8162,7 +8210,7 @@
                   )) +
               frow(
                 "備註",
-                `<input class="inp" id="rNote" placeholder="備註" value="${esc(R.n)}" aria-label="備註" enterkeyhint="done" autocomplete="off">`,
+                `<textarea class="inp note" id="rNote" placeholder="備註" aria-label="備註" rows="1" autocomplete="off">${esc(R.n)}</textarea>`,
               )
             : frow(
                 "分類",
@@ -8189,7 +8237,7 @@
               ) +
               frow(
                 "備註",
-                `<input class="inp" id="rNote" placeholder="店家、品項…" value="${esc(R.n)}" aria-label="備註" enterkeyhint="done" autocomplete="off">`,
+                `<textarea class="inp note" id="rNote" placeholder="店家、品項…（可換行）" aria-label="備註" rows="1" autocomplete="off">${esc(R.n)}</textarea>`,
               ) +
               (showProj()
                 ? frow(
@@ -8245,7 +8293,7 @@
         }
       </div>
       ${editing && tx.ct ? `<div class="edinfo">記於 20${esc(String(tx.ct).slice(0, 14))}</div>` : ""}
-      <div class="fbody">${
+      <div class="fbody${swap ? " swap" : ""}">${
         favView
           ? favList
           : `${frow(
@@ -8283,6 +8331,8 @@
               if (on) on.scrollIntoView({ block: "nearest" });
             }
           }
+          const ta = el.querySelector("#rNote");
+          if (ta && ta.value.includes("\n")) growNote(ta);
           // date label: drop the weekday, then 「今天」, when the box is too narrow (large text sizes)
           const dl = el.querySelector(".dlab > span");
           if (dl)
@@ -8414,6 +8464,7 @@
             R.fresh = false;
             R.nsugAll = false;
             R.keys = true; // the next entry starts at the amount again
+            R.swap = true;
             draw();
             const nToday = monthTx(k).filter((x) => x.d === t.d).length;
             toast(
@@ -8487,6 +8538,7 @@
           if (b.dataset.type === "fav") {
             readFields();
             R.view = "fav";
+            R.swap = true;
             draw();
             return;
           }
@@ -8508,6 +8560,7 @@
             const f = (S.meta.favs || [])[+b.dataset.fav];
             if (!f) return;
             R.view = "form";
+            R.swap = true;
             R.t = f.t;
             R.c = f.c || "";
             R.s = f.s || "";
@@ -8569,6 +8622,7 @@
           if (b.dataset.type) {
             readFields();
             R.view = "form";
+            R.swap = true;
             R.t = b.dataset.type;
             if (R.t !== "x") {
               const m = S.meta.cats[R.t].find((c) => c.n === R.c);
@@ -8796,9 +8850,14 @@
           }
         });
         // category search: refresh only the lists so the keyboard stays open; note field: filter its chips
+        const growNote = (ta) => {
+          ta.style.height = "auto";
+          ta.style.height = Math.min(ta.scrollHeight, 118) + "px";
+        };
         el.addEventListener("input", (e) => {
           if (e.target.id === "rNote") {
             R.n = e.target.value;
+            growNote(e.target);
             if (R.noting) drawNsug();
             return;
           }
@@ -8810,7 +8869,7 @@
         });
         // note-focus mode: the number keys make room for the system keyboard, 儲存 moves next to the note
         el.addEventListener("focusin", (e) => {
-          if (e.target.matches("input,select") && R.keys) {
+          if (e.target.matches("input,select,textarea") && R.keys) {
             R.keys = false;
             el.querySelector(".rec")?.classList.remove("keyson");
             el.querySelector(".fval")?.setAttribute("aria-pressed", "false");
@@ -8853,7 +8912,7 @@
         );
         el.addEventListener("change", (e) => {
           // any field edited by hand means the amount is done: the keypad gives way to the bottom bar
-          if (R.keys && e.target.matches("select,input")) {
+          if (R.keys && e.target.matches("select,input,textarea")) {
             R.keys = false;
             el.querySelector(".rec")?.classList.remove("keyson");
             el.querySelector(".fval")?.setAttribute("aria-pressed", "false");
@@ -8940,15 +8999,15 @@
             if ($("#sheets").lastElementChild === el) tryClose();
             return;
           }
-          if (e.target.matches("input,select")) {
+          if (e.target.matches("input,select,textarea")) {
             if (e.target.id === "rCatQ" && e.key === "Enter") {
               e.preventDefault();
               el.querySelector(".hits [data-pick]")?.click();
             }
-            if (e.target.id === "rNote" && e.key === "Enter") {
+            // the note is multi-line: Enter is a line break (Ctrl／Cmd+Enter saves from a keyboard)
+            if (e.target.id === "rNote" && e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
               e.preventDefault();
-              if (pref("noteEnterSaves")) save(false);
-              else e.target.blur();
+              save(false);
             }
             return;
           }
@@ -10299,7 +10358,6 @@
               pref("projField"),
             ),
           ) +
-          row("備註按「完成」就儲存", sw("noteEnterSaves", pref("noteEnterSaves"))) +
           row(
             "記到別的月份後",
             select(
