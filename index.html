@@ -3016,6 +3016,204 @@
         width: 18px;
         height: 18px;
       }
+      /* form-style record sheet (2.0): label : field rows, keypad only while the amount is active */
+      .rec.form .fbody {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 2px 16px 10px;
+      }
+      .frow {
+        display: grid;
+        grid-template-columns: 72px minmax(0, 1fr);
+        align-items: center;
+        gap: 12px;
+        padding: 5px 0;
+      }
+      .frow > label {
+        text-align: right;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .frow .inp,
+      .frow .datef,
+      .frow .csel select {
+        height: 48px;
+        font-size: 16px;
+      }
+      .frow .datef {
+        width: 100%;
+      }
+      .frow .datef .dlab {
+        flex: 1;
+        justify-content: center;
+      }
+      .frow .csel.acc select {
+        padding-right: 96px;
+      }
+      .frow .csel select.curs {
+        width: 100%;
+      }
+      .rec.form.favview .fbar {
+        display: none;
+      }
+      .frow .csel .accbal {
+        position: absolute;
+        right: 32px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 13px;
+        pointer-events: none;
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .frow.amt {
+        grid-template-columns: 72px minmax(0, 1fr) 46px;
+        gap: 10px;
+      }
+      .fval {
+        width: 100%;
+        height: 58px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 0 14px;
+        text-align: right;
+      }
+      .fval[aria-pressed="true"] {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent-soft);
+      }
+      .fval .val {
+        font-size: 30px;
+        font-weight: 700;
+        line-height: 1;
+        white-space: nowrap;
+      }
+      .fval .val .sel {
+        background: var(--accent-soft);
+        border-radius: 6px;
+        padding: 0 4px;
+      }
+      .fval .sub {
+        margin-right: auto;
+        font-size: 12.5px;
+        color: var(--muted);
+        text-align: left;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .fval .curtag {
+        font-size: 12px;
+        color: var(--muted);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 1px 5px;
+      }
+      .frow.amt .bksp {
+        width: 46px;
+        height: 48px;
+      }
+      .xrow {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .xrow .csel {
+        flex: 1;
+      }
+      .xrow .swap {
+        width: 44px;
+        height: 44px;
+        flex: none;
+      }
+      .rec.form .keys {
+        display: none;
+        margin-top: 0;
+        border-top: 1px solid var(--line);
+        padding-top: 8px;
+      }
+      .rec.form.keyson .keys {
+        display: grid;
+      }
+      .rec.form.keyson .fbar {
+        display: none;
+      }
+      .fbar {
+        display: flex;
+        gap: 8px;
+        padding: 8px 16px calc(10px + env(safe-area-inset-bottom));
+        border-top: 1px solid var(--line);
+        background: var(--bg);
+      }
+      .fbar button {
+        flex: 1;
+        min-height: 48px;
+        border-radius: 12px;
+        background: var(--surface2);
+        color: var(--ink);
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .fbar .save {
+        flex: 1.4;
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+      .fbar .del {
+        background: color-mix(in srgb, var(--exp) 14%, var(--surface));
+        color: var(--exp);
+      }
+      .favlist {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding-top: 8px;
+      }
+      .favrow {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .fpick {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 56px;
+        padding: 8px 12px;
+        border-radius: 12px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        text-align: left;
+      }
+      .fpick .ft {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .fpick .ft small {
+        color: var(--muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .fpick .num {
+        font-weight: 600;
+      }
       .rrow .nm small {
         color: var(--muted);
         font-size: 12px;
@@ -3155,8 +3353,18 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "1.9.0";
+      const APP_VERSION = "2.0.0";
       const CHANGELOG = [
+        [
+          "2.0.0",
+          "2026-10-10",
+          [
+            "記帳頁改成表單式（和 CWMoney 一樣）：金額、日期、分類、子分類、帳戶、備註、專案、發票號碼一列一欄，由上往下填",
+            "數字鍵盤只在點金額時出現，點其他欄位就收起；底部三個鍵：再記一筆／存為常用／儲存",
+            "新增「常用」分頁：把常記的帳存成常用，之後一點帶入（含金額、分類、帳戶、備註）",
+            "支出可填發票號碼，匯出回 CWMoney 時會寫進發票欄",
+          ],
+        ],
         [
           "1.9.0",
           "2026-10-10",
@@ -6792,6 +7000,9 @@
             neg: tx.t === "a" && +tx.a < 0,
           });
         Object.assign(R, preset); // 復原／複製 reopen with the values as they were
+        R.keys = !editing && !preset.expr; // the keypad shows while the amount is being typed
+        R.view = "form"; // "form" | "fav" (常用)
+        R.inv = (tx && tx.inv) || preset.inv || "";
         const expr0 = R.expr; // amount as opened: unchanged → tx.a is written back untouched
         if (!tx && !preset.cur && R.cur !== "TWD") R.r = lastRate(R.cur);
         R.fresh = !!R.expr; // the first digit replaces the amount shown (A-04)
@@ -7123,54 +7334,167 @@
           const showDate = !simple || editing || !today;
           // media queries ignore the text-size zoom, so the short-screen tier is decided here
           const short = window.innerHeight / (+lsGet("ledger.zoom", "1") || 1) <= 740;
-          el.innerHTML = `<div class="rec${short ? " short" : ""}${moreOpen ? " more" : ""}${simple ? " simple" : ""}"><div class="grab" style="margin-top:6px"></div>
+          const CURS = ["TWD", "USD", "JPY", "EUR", "CNY", "HKD", "KRW", "GBP", "AUD", "SGD", "MOP", "THB"];
+          if (R.cur && !CURS.includes(R.cur)) CURS.push(R.cur);
+          const frow = (label, body, cls = "") =>
+            `<div class="frow${cls ? " " + cls : ""}"><label>${label}</label>${body}</div>`;
+          const sel = (inner, id, extra = "") => `<span class="csel${extra}">${inner}</span>`;
+          const cats = S.meta.cats[R.t] || [],
+            mainC = cats.find((c) => c.n === R.c);
+          const subOpts = mainC
+            ? `<option value="">${mainC.s.length ? "不選子分類" : "沒有子分類"}</option>${mainC.s
+                .map((s2) => `<option${s2 === R.s ? " selected" : ""}>${esc(s2)}</option>`)
+                .join("")}<option value="__new">＋ 新增子分類…</option>`
+            : `<option value="">子分類</option>`;
+          const amtSub = hasOp
+            ? esc(R.expr) + " ="
+            : R.cur !== "TWD" && v
+              ? "≈ NT$ " + money(v * R.r, { dec: true })
+              : isX
+                ? ""
+                : esc(catContext());
+          const favs = S.meta.favs || [];
+          const favList = favs.length
+            ? `<div class="favlist">${favs
+                .map(
+                  (f, i) =>
+                    `<div class="favrow"><button class="fpick" data-fav="${i}"><span class="badge" style="--c:${f.t === "x" ? "var(--xfer)" : catColor(f.t, f.c)}">${esc(f.t === "x" ? "轉" : initial(f.c))}</span><span class="ft"><b>${esc(f.n)}</b><small>${esc(f.t === "x" ? `${dispAcc(f.acc)} → ${dispAcc(f.to)}` : [f.s || f.c, dispAcc(f.acc), f.note].filter(Boolean).join(" · "))}</small></span>${f.a ? `<span class="num ${f.t === "e" ? "exp" : f.t === "i" ? "inc" : "xfer"}">${money(f.a, { dec: true })}</span>` : ""}</button><button class="sqb" data-favdel="${i}" aria-label="刪除常用 ${esc(f.n)}">×</button></div>`,
+                )
+                .join("")}</div>`
+            : `<div class="card empty" style="margin-top:12px">還沒有常用項目。<br>填好一筆常記的帳，按下方「存為常用」，之後在這裡一點就帶入。</div>`;
+          const formRows = isX
+            ? (R.t === "x"
+                ? frow(
+                    "轉出",
+                    sel(
+                      `<select class="inp" id="rAcc" aria-label="轉出帳戶">${accOpts(R.acc)}</select><small class="accbal num muted">${balText(R.acc)}</small>`,
+                      "rAcc",
+                      " acc",
+                    ),
+                  ) +
+                  frow(
+                    "轉入",
+                    `<span class="xrow">${sel(`<select class="inp" id="rTo" aria-label="轉入帳戶">${accOpts(R.to)}</select><small class="accbal num muted">${balText(R.to)}</small>`, "rTo", " acc")}<button class="sqb swap" data-act="swap" aria-label="對調轉出與轉入">⇄</button></span>`,
+                  )
+                : frow(
+                    "方向",
+                    `<button class="chip" id="rNeg" aria-pressed="${!!R.neg}">${R.neg ? "減少" : "增加"}</button>`,
+                  ) +
+                  frow(
+                    "帳戶",
+                    sel(
+                      `<select class="inp" id="rAcc" aria-label="帳戶">${accOpts(R.acc)}</select><small class="accbal num muted">${balText(R.acc)}</small>`,
+                      "rAcc",
+                      " acc",
+                    ),
+                  )) +
+              frow(
+                "備註",
+                `<input class="inp" id="rNote" placeholder="備註" value="${esc(R.n)}" aria-label="備註" enterkeyhint="done" autocomplete="off">`,
+              )
+            : frow(
+                "分類",
+                sel(
+                  `<select class="inp" id="rMain" aria-label="分類"><option value=""${R.c ? "" : " selected"}>選分類</option>${cats.map((c) => `<option${c.n === R.c ? " selected" : ""}>${esc(c.n)}</option>`).join("")}<option value="__new">＋ 新增主分類…</option></select>`,
+                  "rMain",
+                ),
+              ) +
+              frow(
+                "子分類",
+                sel(
+                  `<select class="inp" id="rSub" aria-label="子分類"${mainC ? "" : " disabled"}>${subOpts}</select>`,
+                  "rSub",
+                  mainC ? "" : " off",
+                ),
+              ) +
+              frow(
+                "帳戶",
+                sel(
+                  `<select class="inp" id="rAcc" aria-label="帳戶">${accOpts(R.acc)}</select><small class="accbal num muted">${balText(R.acc)}</small>`,
+                  "rAcc",
+                  " acc",
+                ),
+              ) +
+              frow(
+                "備註",
+                `<input class="inp" id="rNote" placeholder="店家、品項…" value="${esc(R.n)}" aria-label="備註" enterkeyhint="done" autocomplete="off">`,
+              ) +
+              (showProj()
+                ? frow(
+                    "專案",
+                    sel(
+                      `<select class="inp" id="rProj" aria-label="專案"><option value="">無專案</option>${(
+                        S.meta.projects || []
+                      )
+                        .filter((p2) => !p2.done || p2.n === R.p)
+                        .map((p2) => `<option${p2.n === R.p ? " selected" : ""}>${esc(p2.n)}</option>`)
+                        .join("")}<option value="__new">＋ 新專案…</option></select>`,
+                      "rProj",
+                    ),
+                  )
+                : "") +
+              (R.t === "e"
+                ? frow(
+                    "發票號碼",
+                    `<input class="inp num" id="rInv" placeholder="選填" value="${esc(R.inv || "")}" aria-label="發票號碼" autocomplete="off" autocapitalize="characters">`,
+                  )
+                : "");
+          const curRows =
+            frow(
+              "幣別",
+              sel(
+                `<select class="inp curs" id="rCur" aria-label="幣別">${CURS.map((c) => `<option${c === R.cur ? " selected" : ""}>${c}</option>`).join("")}</select>`,
+                "rCur",
+              ),
+            ) +
+            (R.cur !== "TWD"
+              ? frow(
+                  "匯率",
+                  `<input class="inp num" id="rRate" inputmode="decimal" value="${esc(R.r)}" aria-label="匯率">`,
+                )
+              : "");
+          const favView = R.view === "fav" && !editing && R.t !== "a";
+          el.innerHTML = `<div class="rec form${short ? " short" : ""}${R.keys && !favView ? " keyson" : ""}${favView ? " favview" : ""}"><div class="grab" style="margin-top:6px"></div>
       <div class="rh"><button class="iconbtn" data-close aria-label="關閉">${XI}</button>
         ${
           R.t === "a"
             ? `<div style="flex:1;text-align:center;font-weight:600">餘額調整</div>`
-            : `<div class="seg" role="group" aria-label="類型">${[
-                ["e", "支出"],
-                ["i", "收入"],
-                ["x", "轉帳"],
-              ]
-                .map(([k, l]) => `<button data-type="${k}" aria-pressed="${R.t === k}">${l}</button>`)
+            : `<div class="seg" role="group" aria-label="類型">${(editing ? [] : [["fav", "常用"]])
+                .concat([
+                  ["e", "支出"],
+                  ["i", "收入"],
+                  ["x", "轉帳"],
+                ])
+                .map(
+                  ([k, l]) =>
+                    `<button data-type="${k}" aria-pressed="${favView ? k === "fav" : R.t === k}">${l}</button>`,
+                )
                 .join("")}</div>`
         }
-                </div>
+      </div>
       ${editing && tx.ct ? `<div class="edinfo">記於 20${esc(String(tx.ct).slice(0, 14))}</div>` : ""}
-      <div class="amount">
-        ${R.t === "a" ? `<button class="chip" id="rNeg" aria-pressed="${!!R.neg}">${R.neg ? "減少" : "增加"}</button>` : ""}
-                <div class="disp"><div class="expr">${hasOp ? esc(R.expr) + " =" : R.cur !== "TWD" && v ? "≈ NT$ " + money(v * R.r, { dec: true }) : esc(catContext())}</div>
-        <div class="val ${R.t === "e" ? "exp" : R.t === "i" ? "inc" : "xfer"}">${R.cur !== "TWD" ? `<span class="curtag">${esc(R.cur)}</span>` : ""}<span class="${R.fresh && R.expr ? "sel" : ""}">${dispVal()}</span></div></div>
-        <button class="bksp" data-k="⌫" aria-label="刪除一位，長按清空"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H9l-6 7 6 7h12z"/><path d="M17 9.5l-5 5M12 9.5l5 5"/></svg></button>
-      </div>
-      <div class="catarea">
-        ${
-          isX
-            ? R.t === "x"
-              ? xferHTML()
-              : `<p class="small muted" style="margin:6px 0">餘額調整只改這個帳戶的餘額，不算收支。</p>`
-            : panesHTML()
-        }
-      </div>
-            <div class="recfields">
-        ${nsugHTML()}
-        <div class="notew"><input class="inp" id="rNote" placeholder="備註（店家、品項…）" value="${esc(R.n)}" aria-label="備註" enterkeyhint="done" autocomplete="off">${simple ? "" : `<button class="ptag" data-act="more" aria-expanded="${moreOpen}">${moreOpen ? "收起 ▴" : "更多 ▾"}</button>`}<button class="btn primary nsave" data-act="${!editing && stay ? "again" : "save"}">${editing ? "儲存修改" : "儲存"}</button></div>
-        ${showDate ? `<div class="datef"${R.t === "x" ? ' style="grid-column:span 2"' : ""}><button data-dd="-1" aria-label="前一天">‹</button><label class="dlab"><span class="${today ? "" : "num"}" style="${today ? "" : "color:var(--warn);font-weight:600"}">${dateLabel(R.d)}</span><input type="date" id="rDate" value="${R.d}" aria-label="日期"></label><button data-dd="1" aria-label="後一天">›</button></div>` : ""}
-        ${R.t === "x" ? "" : `<div class="accw${showDate ? "" : " wide"}"><select class="inp" id="rAcc" aria-label="帳戶">${accOpts(R.acc)}</select><small class="accbal num muted">${balText(R.acc)}</small></div>`}
-        ${moreOpen ? moreHTML() : ""}
-      </div>
-      ${confirmDel ? `<div style="padding:0 16px 6px"><div class="confirm"><span>確定刪除這筆？刪除後無法復原。</span><div class="btnrow"><button class="btn danger" data-act="reallyDel">刪除</button><button class="btn" data-act="cancelDel">取消</button></div></div></div>` : ""}
+      <div class="fbody">${
+        favView
+          ? favList
+          : `${frow(
+              "金額",
+              `<button class="fval" data-act="amtFocus" aria-pressed="${!!R.keys}" aria-label="金額，點一下用數字鍵盤輸入"><span class="sub num">${amtSub}</span>${R.cur !== "TWD" ? `<span class="curtag">${esc(R.cur)}</span>` : ""}<span class="val num ${R.t === "e" ? "exp" : R.t === "i" ? "inc" : "xfer"}"><span class="${R.fresh && R.expr ? "sel" : ""}">${dispVal()}</span></span></button><button class="bksp" data-k="⌫" aria-label="刪除一位，長按清空"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H9l-6 7 6 7h12z"/><path d="M17 9.5l-5 5M12 9.5l5 5"/></svg></button>`,
+              "amt",
+            )}
+        ${frow("日期", `<div class="datef"><button data-dd="-1" aria-label="前一天">‹</button><label class="dlab"><span class="${today ? "" : "num"}" style="${today ? "" : "color:var(--warn);font-weight:600"}">${dateLabel(R.d)}</span><input type="date" id="rDate" value="${R.d}" aria-label="日期"></label><button data-dd="1" aria-label="後一天">›</button></div>`)}
+        ${formRows}
+        ${curRows}
+        ${confirmDel ? `<div class="confirm" style="margin-top:8px"><span>確定刪除這筆？刪除後無法復原。</span><div class="btnrow"><button class="btn danger" data-act="reallyDel">刪除</button><button class="btn" data-act="cancelDel">取消</button></div></div>` : ""}`
+      }</div>
       <div class="keys">
                 ${["7", "8", "9", "÷", "4", "5", "6", "×", "1", "2", "3", "−", ".", "0", "00", "+"].map((k) => `<button data-k="${k}" class="${"÷×−+".includes(k) ? "op" : ""}" aria-label="${k}">${k}</button>`).join("")}
-        ${
-          editing
-            ? `<button class="del" data-act="del">刪除</button><button class="again" data-act="dup">複製</button><button class="save" data-act="save">儲存修改</button>`
-            : stay
-              ? `<button class="again" data-act="clear">清空</button><button class="save" data-act="again" style="grid-column:span 3">儲存</button>`
-              : `<button class="again" data-act="clear">清空</button><button class="again" data-act="again">儲存並繼續</button><button class="save" data-act="save">儲存</button>`
-        }
-      </div></div>`;
+        <button class="again" data-act="clear">清空</button><button class="again" data-act="amtDone">完成</button><button class="save" data-act="${editing ? "save" : stay ? "again" : "save"}">${editing ? "儲存修改" : "儲存"}</button>
+      </div>
+      <div class="fbar">${
+        editing
+          ? `<button class="del" data-act="del">刪除</button><button data-act="dup">複製</button><button class="save" data-act="save">儲存修改</button>`
+          : `<button data-act="again">再記一筆</button>${R.t === "a" ? "" : `<button data-act="fav">存為常用</button>`}<button class="save" data-act="save">儲存</button>`
+      }</div></div>`;
           if (R.qOpen && R.focusQ) {
             R.focusQ = false;
             const qi = el.querySelector("#rCatQ");
@@ -7200,6 +7524,7 @@
           if (g("#rTo")) R.to = g("#rTo").value;
           if (g("#rProj") && g("#rProj").value !== "__new") R.p = g("#rProj").value;
           if (g("#rNote")) R.n = g("#rNote").value;
+          if (g("#rInv")) R.inv = g("#rInv").value.trim();
           if (g("#rRate")) R.r = +g("#rRate").value || 1;
         }
         function save(keepOpen) {
@@ -7276,6 +7601,10 @@
             t.c = tx.c;
           }
           if (editing && tx.p && (t.t === "x" || t.t === "a")) t.p = tx.p; // no project control on these screens: keep it
+          if (R.t === "e") {
+            if (R.inv) t.inv = R.inv;
+            else delete t.inv;
+          }
           if (editing && tx.n != null && R.n === flatNote(tx.n))
             t.n = tx.n; // unchanged multi-line note from CWMoney
           else if (R.n.trim()) t.n = R.n.trim();
@@ -7309,8 +7638,10 @@
           if (keepOpen) {
             R.expr = "";
             R.n = "";
+            R.inv = "";
             R.fresh = false;
             R.nsugAll = false;
+            R.keys = true; // the next entry starts at the amount again
             draw();
             const nToday = monthTx(k).filter((x) => x.d === t.d).length;
             toast(
@@ -7381,8 +7712,91 @@
             draw();
             return;
           }
+          if (b.dataset.type === "fav") {
+            readFields();
+            R.view = "fav";
+            draw();
+            return;
+          }
+          if (b.dataset.act === "amtFocus") {
+            readFields();
+            R.keys = !R.keys;
+            if (document.activeElement && el.contains(document.activeElement)) document.activeElement.blur();
+            el.querySelector(".rec")?.classList.toggle("keyson", R.keys);
+            b.setAttribute("aria-pressed", String(R.keys));
+            return;
+          }
+          if (b.dataset.act === "amtDone") {
+            R.keys = false;
+            el.querySelector(".rec")?.classList.remove("keyson");
+            el.querySelector(".fval")?.setAttribute("aria-pressed", "false");
+            return;
+          }
+          if (b.dataset.fav !== undefined) {
+            const f = (S.meta.favs || [])[+b.dataset.fav];
+            if (!f) return;
+            R.view = "form";
+            R.t = f.t;
+            R.c = f.c || "";
+            R.s = f.s || "";
+            R.acc = f.acc && S.meta.accounts.some((a) => a.name === f.acc) ? f.acc : R.acc;
+            R.to = f.to || R.to;
+            R.n = f.note || "";
+            R.p = f.p || "";
+            R.accTouched = true;
+            if (f.a) {
+              R.expr = String(f.a);
+              R.fresh = true;
+              R.keys = false;
+            } else R.keys = true;
+            followAcc();
+            draw();
+            return;
+          }
+          if (b.dataset.favdel !== undefined) {
+            const i = +b.dataset.favdel,
+              f = (S.meta.favs || [])[i];
+            if (!f) return;
+            S.meta.favs.splice(i, 1);
+            saveMeta();
+            draw();
+            toast(`已刪除常用「${f.n}」`, {
+              label: "復原",
+              fn: () => {
+                (S.meta.favs || (S.meta.favs = [])).splice(i, 0, f);
+                saveMeta();
+                if (el.isConnected) draw();
+              },
+            });
+            return;
+          }
+          if (b.dataset.act === "fav") {
+            readFields();
+            if ((R.t === "e" || R.t === "i") && !R.c) {
+              toast("先選一個分類再存成常用");
+              return;
+            }
+            const vv = value();
+            const dflt =
+              R.t === "x"
+                ? `${dispAcc(R.acc)} → ${dispAcc(R.to)}`
+                : [R.s || R.c, R.n.trim()].filter(Boolean).join(" ");
+            inlineAdd(
+              "常用名稱",
+              (name) => {
+                const f = { n: name, t: R.t, c: R.c, s: R.s, acc: R.acc, to: R.to, note: R.n.trim(), p: R.p };
+                if (vv > 0) f.a = r2(vv);
+                (S.meta.favs || (S.meta.favs = [])).push(f);
+                saveMeta();
+                toast(`已存為常用「${name}」，在記帳頁的「常用」分頁`);
+              },
+              dflt,
+            );
+            return;
+          }
           if (b.dataset.type) {
             readFields();
+            R.view = "form";
             R.t = b.dataset.type;
             if (R.t !== "x") {
               const m = S.meta.cats[R.t].find((c) => c.n === R.c);
@@ -7624,6 +8038,11 @@
         });
         // note-focus mode: the number keys make room for the system keyboard, 儲存 moves next to the note
         el.addEventListener("focusin", (e) => {
+          if (e.target.matches("input,select") && R.keys) {
+            R.keys = false;
+            el.querySelector(".rec")?.classList.remove("keyson");
+            el.querySelector(".fval")?.setAttribute("aria-pressed", "false");
+          }
           if (e.target.id !== "rNote" || R.noting) return;
           R.noting = true;
           el.querySelector(".rec")?.classList.add("noting");
@@ -7661,6 +8080,12 @@
           el.addEventListener(ev, () => clearTimeout(lpT)),
         );
         el.addEventListener("change", (e) => {
+          // any field edited by hand means the amount is done: the keypad gives way to the bottom bar
+          if (R.keys && e.target.matches("select,input")) {
+            R.keys = false;
+            el.querySelector(".rec")?.classList.remove("keyson");
+            el.querySelector(".fval")?.setAttribute("aria-pressed", "false");
+          }
           if (e.target.id === "rMain") {
             readFields();
             if (e.target.value === "__new") {
