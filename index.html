@@ -409,10 +409,15 @@
       .dayhead + .txw {
         border-top: 0;
       }
+      /* the swipe actions live outside the row (just past its right edge, clipped by .txw) and slide in
+         together with it, so they can only ever occupy the space the row has vacated — never the amount */
       .txa {
         position: absolute;
-        inset: 0 0 0 auto;
+        top: 0;
+        bottom: 0;
+        left: 100%;
         display: flex;
+        transition: transform 0.22s ease;
       }
       .txa button {
         width: 72px;
@@ -439,13 +444,15 @@
         transition: transform 0.22s ease;
         touch-action: pan-y;
       }
-      .txw.open .tx {
+      .txw.open .tx,
+      .txw.open .txa {
         transform: translateX(-144px);
       }
       .sheet .dayhead {
         top: 0;
       }
-      .txw.drag .tx {
+      .txw.drag .tx,
+      .txw.drag .txa {
         transition: none;
       }
       .dadd {
@@ -3075,8 +3082,16 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "1.7.1";
+      const APP_VERSION = "1.7.2";
       const CHANGELOG = [
+        [
+          "1.7.2",
+          "2026-10-10",
+          [
+            "明細左滑出現的「複製／刪除」改放在列的外側、跟著列一起滑進來，不會再壓到金額",
+            "左滑判定更嚴格：接近垂直的手勢一律當捲動，不會在滑清單時誤開按鈕",
+          ],
+        ],
         [
           "1.7.1",
           "2026-10-10",
@@ -4027,8 +4042,7 @@
         const reset = (row) => {
           if (!row) return;
           row.classList.remove("drag");
-          const tx = row.querySelector(".tx");
-          if (tx) tx.style.transform = "";
+          row.querySelectorAll(".tx,.txa").forEach((el) => (el.style.transform = ""));
         };
         v.addEventListener(
           "touchstart",
@@ -4062,12 +4076,13 @@
             const t = e.touches[0],
               dx = t.clientX - x0,
               dy = t.clientY - y0;
-            if (lock === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8))
-              lock = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+            // a clearly sideways move opens the row; anything close to vertical is a scroll
+            if (lock === null && (Math.abs(dx) > 10 || Math.abs(dy) > 8))
+              lock = Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.5 ? "x" : "y";
             if (lock !== "x") return;
             w.classList.add("drag");
             const off = Math.max(-170, Math.min(0, base + dx));
-            w.querySelector(".tx").style.transform = `translateX(${off}px)`;
+            w.querySelectorAll(".tx,.txa").forEach((el) => (el.style.transform = `translateX(${off}px)`));
           },
           { passive: true },
         );
@@ -4076,12 +4091,11 @@
           (e) => {
             if (!w) return;
             const row = w;
-            const tx = row.querySelector(".tx");
             if (lock === "x") {
               const dx = e.changedTouches[0].clientX - x0;
               const shouldOpen = base + dx < -60;
               row.classList.remove("drag");
-              tx.style.transform = "";
+              row.querySelectorAll(".tx,.txa").forEach((el) => (el.style.transform = ""));
               row.classList.toggle("open", shouldOpen);
               row.dataset.swiped = "1";
               setTimeout(() => {
