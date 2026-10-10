@@ -1093,7 +1093,7 @@
       /* two-line legend rows: name + amount, then 「54.6% · ×3.5」 */
       .legend button {
         display: grid;
-        grid-template-columns: 12px minmax(0, 1fr) auto;
+        grid-template-columns: 22px minmax(0, 1fr) auto;
         grid-template-rows: auto auto;
         column-gap: 10px;
         row-gap: 2px;
@@ -1107,9 +1107,9 @@
         border-top: 0;
       }
       .legend .sw {
-        width: 12px;
-        height: 12px;
-        border-radius: 4px;
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
         grid-row: 1 / 3;
       }
       .legend .nm {
@@ -1203,6 +1203,18 @@
       }
       .acgroup h4 .gh .num {
         letter-spacing: 0;
+      }
+      .acgroup h4 .gh > span:first-child {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+      }
+      .acgroup h4 .gh > span:first-child small {
+        font-size: 12px;
+        letter-spacing: 0;
+        line-height: 1;
+        padding-top: 1px;
       }
       .acgroup h4 .gh .chev {
         display: inline-block;
@@ -3684,8 +3696,13 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "2.3.0";
+      const APP_VERSION = "2.3.1";
       const CHANGELOG = [
+        [
+          "2.3.1",
+          "2026-10-10",
+          ["帳戶群組的「含 N 個隱藏」對齊群組名；主頁「發生了什麼」句子精簡；報表分類清單的顏色方塊放大"],
+        ],
         [
           "2.3.0",
           "2026-10-10",
@@ -5323,24 +5340,25 @@
         let s = "";
         if (base > 0) {
           const tone = Math.abs(diff) < Math.max(300, 0.05 * base) ? "flat" : diff > 0 ? "bad" : "good";
-          s += `到今天的日常支出 <b class="num">${f(cur)}</b>，${
+          const blShort = CMP_BASE_LABEL[cmpBase()];
+          s += `日常 <b class="num">${f(cur)}</b>，${
             tone === "flat"
-              ? `和${bl}差不多（${f(base)}）`
-              : `比${bl}${diff > 0 ? "多" : "少"} <b class="num ${tone === "bad" ? "exp" : "inc"}">${f(Math.abs(diff))}</b>${pc !== null && Math.abs(pc) < 1000 ? `（${diff > 0 ? "▲" : "▼"}${Math.abs(pc)}%）` : ""}`
+              ? `和${blShort}差不多`
+              : `比${blShort}${diff > 0 ? "多" : "少"} <b class="num ${tone === "bad" ? "exp" : "inc"}">${f(Math.abs(diff))}</b>${pc !== null && Math.abs(pc) < 1000 ? `（${diff > 0 ? "▲" : "▼"}${Math.abs(pc)}%）` : ""}`
           }`;
           if (tone !== "flat" && sameSign.length)
-            s += `，主要差在 ${sameSign
+            s += `：${sameSign
               .map(
                 (x) =>
                   `<button class="tapline" data-hcat="${esc(x.c)}" data-hcatm="${C.cm}">${esc(x.c)} ${x.diff > 0 ? "+" : "−"}${f(Math.abs(x.diff))}</button>`,
               )
               .join("、")}`;
           s += "。";
-        } else s += `到今天的日常支出 <b class="num">${f(cur)}</b>，${bl}沒有可比的資料。`;
+        } else s += `日常 <b class="num">${f(cur)}</b>，${bl}沒有資料可比。`;
         if (m.bigs.length) {
           const upTo = m.bigs.filter((t) => +t.d.slice(8) <= d);
           if (upTo.length)
-            s += ` 另有 <b>${upTo.length}</b> 筆大額共 <b class="num">${f(upTo.reduce((a, t) => a + sub(t), 0))}</b> 未計入：${upTo
+            s += ` 大額 ${upTo.length} 筆 <b class="num">${f(upTo.reduce((a, t) => a + sub(t), 0))}</b> 另計：${upTo
               .slice(0, 2)
               .map(
                 (t) =>
@@ -5348,7 +5366,7 @@
               )
               .join("、")}${upTo.length > 2 ? " 等" : ""}。`;
         }
-        return `<div class="card story"><div class="small muted" style="margin-bottom:4px">發生了什麼${opts.sub ? ` · ${opts.sub}` : ""}</div><div class="st">${s}</div></div>`;
+        return `<div class="card story"><div class="small muted" style="margin-bottom:4px">到今天為止${opts.sub ? ` · ${opts.sub}` : ""}${cmpBase() === "typ" ? " · 典型月＝近 6 個月中位數" : ""}</div><div class="st">${s}</div></div>`;
       }
       // ---- 1. 月進度曲線
       function drawProgress() {
@@ -7077,7 +7095,7 @@
           h += `<div class="acgroup${closed ? " closed" : ""}"><h4>${
             sort
               ? `<span class="gh"><span>${esc(g)}</span><span><button class="sqb" data-act="grpUp" data-g="${esc(g)}" aria-label="${esc(g)} 往上" ${gi === 0 ? "disabled" : ""}>${UP_I}</button><button class="sqb" data-act="grpDown" data-g="${esc(g)}" aria-label="${esc(g)} 往下" ${gi === order.length - 1 ? "disabled" : ""}>${DOWN_I}</button></span></span>`
-              : `<button class="gh" data-act="grpToggle" data-g="${esc(g)}" aria-expanded="${!closed}"><span><span class="chev">▾</span> ${esc(g)}${hidN && !showHid ? `<small class="muted" style="font-weight:400"> 含 ${hidN} 個隱藏</small>` : ""}</span><span class="num">${money(sum)}</span></button>`
+              : `<button class="gh" data-act="grpToggle" data-g="${esc(g)}" aria-expanded="${!closed}"><span><span class="chev">▾</span><span>${esc(g)}</span>${hidN && !showHid ? `<small class="muted" style="font-weight:400">含 ${hidN} 個隱藏</small>` : ""}</span><span class="num">${money(sum)}</span></button>`
           }</h4>`;
           h += vis
             .map((a, i) =>
