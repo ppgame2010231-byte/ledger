@@ -3725,8 +3725,15 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "2.3.6";
+      const APP_VERSION = "2.4.0";
       const CHANGELOG = [
+        [
+          "2.4.0",
+          "2026-10-11",
+          [
+            "主頁›年：點「每年收支」任一根長條，上面的數字卡和「花最多的分類」就換成那一年（全年 vs 前一年）；「回到今年」一鍵回來，「看 N 年報表」才會離開這頁",
+          ],
+        ],
         [
           "2.3.6",
           "2026-10-11",
@@ -5812,24 +5819,49 @@
           return h;
         }
         if (page === "年") {
-          const p = P.年,
-            cur = homeSum(p.a, p.b);
-          h += headCard("年", `${+td.slice(0, 4)} 年 1 月 1 日到今天`);
-          h += `<div class="card chart"><div class="rowhead"><h3>每年收支</h3><span class="small muted"><span class="inc">■</span> 收入　<span class="exp">■</span> 支出</span></div><div id="htrend" data-kind="years" style="margin-top:8px"></div><div class="small muted">點任一年的長條，就會到那一年的報表</div></div>`;
-          const rows = Object.entries(homeData().ytdCat)
+          const ty = td.slice(0, 4);
+          const Y = S.homeYear && S.homeYear !== ty ? S.homeYear : ty; // the year picked on the chart (default: this year)
+          const past = Y !== ty;
+          if (!past) {
+            h += headCard("年", `${+ty} 年 1 月 1 日到今天`);
+          } else {
+            // a past year: the whole year against the whole year before it
+            const a = Y + "-01-01",
+              b = Y + "-12-31",
+              py = String(+Y - 1);
+            const curY = homeSum(a, b),
+              prevY = homeSum(py + "-01-01", py + "-12-31");
+            const tight = !wan && Math.max(curY.e, curY.i, Math.abs(curY.i - curY.e)) >= 1e6;
+            h += `<div class="card"><div class="rowhead"><h3>${+Y} 年</h3><button class="tapline" data-act="homeYearNow">回到今年 ›</button></div>
+    <div class="summary${tight ? " tight" : ""}" style="margin-top:10px"><div><div class="k">支出</div><div class="v num exp">${fmtN(curY.e)}</div></div><div><div class="k">收入</div><div class="v num inc">${fmtN(curY.i)}</div></div><div><div class="k">結餘</div><div class="v">${netHTML(curY.i - curY.e)}</div></div></div>
+    <div class="hcmp" title="${+py} 年全年"><span class="k">${+py} 年</span>${prevY.e > 0 ? `<b class="num">${fmtN(prevY.e)}</b>${homeDelta(curY.e, prevY.e)}${bulletHTML(curY.e, prevY.e)}` : `<span class="dl flat">—</span><span class="muted">沒有支出</span>`}</div></div>`;
+          }
+          h += `<div class="card chart"><div class="rowhead"><h3>每年收支</h3><span class="small muted"><span class="inc">■</span> 收入　<span class="exp">■</span> 支出</span></div><div id="htrend" data-kind="years" data-year="${Y}" style="margin-top:8px"></div><div class="small muted">點任一年的長條，下面就換成那一年 · <button class="tapline" data-act="homeYearReport" data-y="${Y}">看 ${+Y} 年報表 ›</button></div></div>`;
+          // that year's expense by category (this year: to today)
+          const cat = {};
+          let yTot = 0;
+          const ya = Y + "-01-01",
+            yb = past ? Y + "-12-31" : td;
+          for (let k = Y + "-01"; k <= mkey(yb); k = addMonths(k, 1))
+            for (const t of monthTx(k))
+              if (t.t === "e" && !D.excl.has(t.c) && t.d >= ya && t.d <= yb) {
+                cat[t.c || "未分類"] = (cat[t.c || "未分類"] || 0) + sub(t);
+                yTot += sub(t);
+              }
+          const rows = Object.entries(cat)
             .sort((x, y) => y[1] - x[1])
-            .slice(0, 5);
-          h += `<div class="card"><div class="rowhead"><h3>今年花最多的分類</h3><span class="small muted">到今天</span></div>${
+            .slice(0, 8);
+          h += `<div class="card"><div class="rowhead"><h3>${past ? +Y + " 年" : "今年"}花最多的分類</h3><span class="small muted">${past ? "全年" : "到今天"} · ${fmtN(yTot)}</span></div>${
             rows.length
               ? `<div class="legend" style="margin-top:6px">${rows
                   .map(
                     ([n, v]) =>
-                      `<button data-hcat="${esc(n)}"><span class="sw" style="background:${catColor("e", n)}"></span><span class="nm">${esc(n)}</span><span class="lv num">${fmtN(v)}</span><span class="meta"><span class="pc">${cur.e ? ((v / cur.e) * 100).toFixed(1) : "0.0"}%</span></span></button>`,
+                      `<button data-hcat="${esc(n)}" data-hcaty="${Y}"><span class="sw" style="background:${catColor("e", n)}"></span><span class="nm">${esc(n)}</span><span class="lv num">${fmtN(v)}</span><span class="meta"><span class="pc">${yTot ? ((v / yTot) * 100).toFixed(1) : "0.0"}%</span></span></button>`,
                   )
                   .join(
                     "",
                   )}</div><div class="small muted" style="margin-top:6px">點任一列，就會到報表看那個分類</div>`
-              : `<div class="empty">今年還沒有支出</div>`
+              : `<div class="empty">${past ? "那一年" : "今年還"}沒有支出</div>`
           }</div>`;
           return h;
         }
@@ -5919,7 +5951,7 @@
               yearly: true,
               label: (k) => "'" + k.slice(2),
               cat: null,
-              cur: td.slice(0, 4),
+              cur: tr.dataset.year || td.slice(0, 4),
             });
           } else {
             for (let i = 11; i >= 0; i--) ks.push(addMonths(mkey(td), -i));
@@ -7449,11 +7481,10 @@
             const mk = hit.dataset.month,
               td = todayStr();
             if (mk.length === 4) {
-              S.rep.period = "y";
-              S.rep.drill = null;
-              S.month = mk === td.slice(0, 4) ? mkey(td) : mk + "-12";
-              S.tab = "report";
-              setSub("report", "分類");
+              // 主頁›年: the bar picks the year; the cards below follow it
+              S.homeYear = mk;
+              render();
+              return;
             } else {
               S.month = mk;
               S.tab = "list";
@@ -7488,6 +7519,12 @@
             if (hc.dataset.hcatm) {
               S.rep.period = "m";
               S.month = hc.dataset.hcatm;
+            } else if (hc.dataset.hcaty) {
+              S.rep.period = "y";
+              S.month =
+                hc.dataset.hcaty === mkey(todayStr()).slice(0, 4)
+                  ? mkey(todayStr())
+                  : hc.dataset.hcaty + "-12";
             } else {
               S.rep.period = "y";
               S.month = mkey(todayStr());
@@ -7720,6 +7757,21 @@
               render();
             },
             review: () => openReview(),
+            homeYearNow: () => {
+              S.homeYear = null;
+              render();
+            },
+            homeYearReport: () => {
+              const y = b.dataset.y,
+                td = todayStr();
+              S.rep.period = "y";
+              S.rep.drill = null;
+              S.month = y === td.slice(0, 4) ? mkey(td) : y + "-12";
+              S.tab = "report";
+              setSub("report", "分類");
+              render();
+              window.scrollTo(0, 0);
+            },
             // 主頁 chart tiles → the page that holds that chart, scrolled to it
             goChart: () => {
               const id = b.dataset.chart,
