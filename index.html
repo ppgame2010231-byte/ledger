@@ -3850,8 +3850,15 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "2.5.1";
+      const APP_VERSION = "2.5.2";
       const CHANGELOG = [
+        [
+          "2.5.2",
+          "2026-10-11",
+          [
+            "重新匯入 CSV（取代模式）不再弄掉你在 App 裡做的事：型態與可避免標記會接回新檔案裡對得上的同一筆（同日期、金額、帳戶、分類、備註、建檔時間），常用、型態設定與分類規則也保留",
+          ],
+        ],
         [
           "2.5.1",
           "2026-10-11",
@@ -12184,7 +12191,7 @@
           .join("")}</tbody></table></div>
         <details class="adv"><summary>進階</summary><div class="small muted">金額慣例：${parsed.sign === "signed" ? "支出為負數" : "一律正數"}　·　${parsed.delim === "\t" ? "tab" : "逗號"}分隔　·　${esc(parsed.enc)}</div></details></div>
       <div class="card stack"><b>匯入方式</b>
-        <label class="radio"><input type="radio" name="im" value="replace" ${mode === "replace" ? "checked" : ""}> <span>取代現有的帳<div class="small muted">分類和帳戶改用檔案裡的，預算和定期記帳保留。</div></span></label>
+        <label class="radio"><input type="radio" name="im" value="replace" ${mode === "replace" ? "checked" : ""}> <span>取代現有的帳<div class="small muted">分類和帳戶改用檔案裡的；預算、定期記帳、常用、型態設定保留，型態／可避免標記會接回對得上的那幾筆。</div></span></label>
         <label class="radio"><input type="radio" name="im" value="append" ${mode === "append" ? "checked" : ""}> <span>加到現有的帳<div class="small muted">重複的（同一天、同金額、同分類、同備註）會自動跳過。</div></span></label>
         ${S.hasData && mode === "replace" ? `<div class="small exp">目前的 ${D.count.toLocaleString()} 筆會被取代。</div>` : ""}
         <div class="progress" id="prog" ${busy ? "" : "hidden"}><i></i></div><span class="small muted" id="progT"></span>
@@ -12272,6 +12279,16 @@
               const s = sig(m[id]);
               have.set(s, (have.get(s) || 0) + 1);
             }
+        // replace: marks made in this app (型態 k, 可避免 fl) are not in the CSV — carry them over to the
+        // matching entry of the new file (same day, amount, account, category, note and CWMoney 建檔時間)
+        const marks = new Map();
+        let carried = 0;
+        if (mode === "replace")
+          for (const m of S.months.values())
+            for (const id in m) {
+              const o = m[id];
+              if (o.k || o.fl) (marks.get(sig(o)) || marks.set(sig(o), []).get(sig(o))).push(o);
+            }
         for (const t of P.tx) {
           if (mode === "append") {
             const s = sig(t),
@@ -12280,6 +12297,14 @@
               have.set(s, n - 1);
               skipped++;
               continue;
+            }
+          } else if (marks.size) {
+            const q = marks.get(sig(t));
+            if (q && q.length) {
+              const o = q.shift();
+              if (o.k) t.k = o.k;
+              if (o.fl) t.fl = o.fl;
+              carried++;
             }
           }
           const k = mkey(t.d);
@@ -12311,12 +12336,16 @@
           const keepB = S.meta.budgets,
             keepR = S.meta.recurring,
             keepX = S.meta.excl;
+          // settings made in this app survive a re-import: 常用, 型態 and their rules, the one-time tunings
+          const keepApp = {};
+          for (const key of ["favs", "kinds", "kindRules", "kindsV", "tune", "reconDone", "lastBackup"])
+            if (S.meta[key] !== undefined) keepApp[key] = S.meta[key];
           const oldAcc = new Map(S.meta.accounts.map((a) => [a.name, a]));
           const accN = [...new Set(P.tx.map((t) => t.acc))];
           const lastUse = {};
           for (const t of P.tx) lastUse[t.acc] = t.d;
           const stale = addDays(todayStr(), -540);
-          S.meta = Object.assign(defaultMeta(), {
+          S.meta = Object.assign(defaultMeta(), keepApp, {
             budgets: keepB,
             recurring: keepR,
             excl: keepX,
@@ -12350,7 +12379,14 @@
         prog(0.5, "寫入手機儲存空間…");
         for (const k of oldKeys) if (!months.has(k)) persist(k); // months that vanished are deleted
         await saveLocal();
-        prog(1, skipped ? `完成，跳過 ${skipped.toLocaleString()} 筆重複` : "完成");
+        prog(
+          1,
+          skipped
+            ? `完成，跳過 ${skipped.toLocaleString()} 筆重複`
+            : carried
+              ? `完成，${carried.toLocaleString()} 筆的型態／可避免標記已接回`
+              : "完成",
+        );
         return skipped;
       }
 
