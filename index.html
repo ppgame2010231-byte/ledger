@@ -3850,13 +3850,20 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "2.5.0";
+      const APP_VERSION = "2.5.1";
       const CHANGELOG = [
+        [
+          "2.5.1",
+          "2026-10-11",
+          [
+            "型態「享受」改名為「非必要」（沒有也不會怎樣：娛樂、治裝、旅遊、犒賞、衝動買的）；已改過名字的不受影響",
+          ],
+        ],
         [
           "2.5.0",
           "2026-10-11",
           [
-            "支出型態：每筆支出可以貼一個型態——固定（房貸、保險、訂閱）、日常（三餐、交通）、一次性（家電、修繕）、享受（娛樂、犒賞）；名稱、顏色、要不要再加幾種都能在「管理型態」改",
+            "支出型態：每筆支出可以貼一個型態——固定（房貸、保險、訂閱）、日常（三餐、交通）、一次性（家電、修繕）、非必要（娛樂、犒賞）；名稱、顏色、要不要再加幾種都能在「管理型態」改",
             "記帳頁多一列「型態」；同一個分類／子分類選過一次，下次記帳會自動帶入（可改）",
             "更多›型態標記：整月支出逐筆貼型態，未標記的排前面；可一鍵「依分類規則補上」，標一筆時也會問要不要把同分類的一起標",
             "主頁›月 多一張「支出型態」卡；「本月進度」與「對照」改以你的型態為準（固定→固定、一次性→大額），沒標的才用自動判斷",
@@ -5262,7 +5269,13 @@
           r: "big",
           d: "買了短時間不會再買：家電、家具、修繕、醫療大筆",
         },
-        { id: "want", n: "享受", c: "#c4567a", r: "daily", d: "想要而非必要：娛樂、治裝、旅遊、犒賞自己" },
+        {
+          id: "want",
+          n: "非必要",
+          c: "#c4567a",
+          r: "daily",
+          d: "沒有也不會怎樣：娛樂、治裝、旅遊、犒賞、衝動買的",
+        },
       ];
       const KIND_COLORS = [
         "#4f7bd8",
@@ -5282,6 +5295,15 @@
       function kinds() {
         if (!Array.isArray(S.meta.kinds) || !S.meta.kinds.length)
           S.meta.kinds = KIND_DEFAULTS.map((k) => Object.assign({}, k));
+        // 2.5.1: the default 「享受」 became 「非必要」 (only when the name was never changed)
+        if (S.meta.kindsV !== 2) {
+          const w = S.meta.kinds.find((k) => k.id === "want");
+          if (w && w.n === "享受") {
+            w.n = "非必要";
+            w.d = KIND_DEFAULTS[3].d;
+          }
+          S.meta.kindsV = 2;
+        }
         return S.meta.kinds;
       }
       const kindOf = (id) => (id ? kinds().find((k) => k.id === id) || null : null);
@@ -7940,7 +7962,7 @@
           lb = /^\d{4}-\d{2}-\d{2}$/.test(String(S.meta.lastBackup || ""))
             ? S.meta.lastBackup.replace(/-/g, "/")
             : "";
-        return `<div class="mh">管理</div><div class="menu">${it("budgets", "budget", "預算", S.meta.budgets?.total ? "每月 " + money(S.meta.budgets.total) : "還沒設定")}${it("recurring", "rec", "定期記帳", rc ? rc + " 筆" : "房租、電話費這類每月固定的帳")}${it("projects", "proj", "專案", pj ? pj + " 個專案" : "一趟旅行、一次裝修的花費集中看")}${it("cats", "cat", "分類", "新增、排序、改名、顏色")}${it("search", "search", "搜尋帳目", "依備註、金額、分類、帳戶找舊帳")}${it("review", "review", "週復盤", "逐筆看這週的支出，標出可避免的")}${it("kinds", "kind", "型態標記", "固定、日常、一次性、享受——幫每筆支出貼上型態")}</div>
+        return `<div class="mh">管理</div><div class="menu">${it("budgets", "budget", "預算", S.meta.budgets?.total ? "每月 " + money(S.meta.budgets.total) : "還沒設定")}${it("recurring", "rec", "定期記帳", rc ? rc + " 筆" : "房租、電話費這類每月固定的帳")}${it("projects", "proj", "專案", pj ? pj + " 個專案" : "一趟旅行、一次裝修的花費集中看")}${it("cats", "cat", "分類", "新增、排序、改名、顏色")}${it("search", "search", "搜尋帳目", "依備註、金額、分類、帳戶找舊帳")}${it("review", "review", "週復盤", "逐筆看這週的支出，標出可避免的")}${it("kinds", "kind", "型態標記", "固定、日常、一次性、非必要——幫每筆支出貼上型態")}</div>
   <div class="mh">資料</div><div class="menu">${it("backup", "save", "備份", lb ? "上次備份 " + lb : "存一份到 iCloud 雲碟或「檔案」App")}${it("restore", "imp", "還原備份", "")}${it("import", "imp", "從 CWMoney 匯入", "把 CWMoney 匯出的檔案帶進來")}${it("export", "exp", "匯出成 CWMoney 格式", "可以匯回 CWMoney，或用試算表打開")}${it("recon", "acct", "對帳", "一次填好所有帳戶的實際餘額，可分多次做")}</div>
   <div class="mh">設定</div><div class="menu">${it("settings", "set", "設定", "外觀、啟動、記帳畫面、明細與報表、帳戶與分類、資料")}${it("about", "info", "關於", "v" + APP_VERSION + "、資料存在哪裡、加到主畫面", true)}</div>
   <p class="small muted" style="text-align:center;margin-top:18px">${S.mode === "sample" ? "範例模式，不會儲存" : "資料只存在這支手機"}　·　${D.count.toLocaleString()} 筆${D.first ? `，自 ${D.first.slice(0, 7).replace("-", "/")} 起` : ""}</p>`;
