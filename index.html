@@ -1431,13 +1431,16 @@
       /* sheets */
       .sheet {
         position: fixed;
-        inset: 0;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--vvh, 100%); /* the visible height (follows the on-screen keyboard; see viewportFix) */
         z-index: 40;
         background: var(--bg);
         display: flex;
         flex-direction: column;
         padding-top: env(safe-area-inset-top, 0px);
-        padding-bottom: env(safe-area-inset-bottom, 0px);
+        padding-bottom: var(--sab);
         animation: up 0.18s ease-out;
       }
       @keyframes up {
@@ -3722,8 +3725,15 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "2.3.5";
+      const APP_VERSION = "2.3.6";
       const CHANGELOG = [
+        [
+          "2.3.6",
+          "2026-10-11",
+          [
+            "修正 iPhone 收起鍵盤後畫面往上縮、底下留一塊黑的問題：彈出畫面改為跟著可見高度，鍵盤收起時把頁面放回原位",
+          ],
+        ],
         [
           "2.3.5",
           "2026-10-11",
@@ -4824,6 +4834,34 @@
         const px = Math.round(probe.getBoundingClientRect().height);
         probe.remove();
         document.documentElement.style.setProperty("--sab", px + "px");
+      })();
+      // iOS and the on-screen keyboard: when a field inside a sheet gets focus, Safari scrolls the whole
+      // page up to reveal it and does not scroll back once the keyboard goes — the sheet then sits too high
+      // with a gap below it. Sheets are sized to the visible height, and the page is put back at 0 whenever
+      // the keyboard leaves.
+      let lockedY = null; // the page offset pinned by lockScroll() while a sheet is open (null = not locked)
+      (function viewportFix() {
+        const vv = window.visualViewport;
+        const put = () => {
+          if (lockedY !== null && (window.scrollY || (vv && vv.offsetTop))) window.scrollTo(0, 0);
+        };
+        if (vv) {
+          const apply = () => {
+            document.documentElement.style.setProperty("--vvh", Math.round(vv.height) + "px");
+            if (vv.height >= window.innerHeight - 40) put(); // keyboard gone (or never there)
+          };
+          vv.addEventListener("resize", apply);
+          vv.addEventListener("scroll", apply);
+          apply();
+        }
+        document.addEventListener("focusout", (e) => {
+          if (!e.target.matches || !e.target.matches("input,textarea,select")) return;
+          setTimeout(() => {
+            const a = document.activeElement;
+            if (a && a.matches && a.matches("input,textarea,select")) return;
+            put();
+          }, 80);
+        });
       })();
       $("#fab").onclick = () => openRecord();
       $("#hSearch").onclick = () => openSearch();
@@ -7865,7 +7903,6 @@
       // While a sheet is open the page behind must not scroll — but iOS forgets the scroll position when
       // body gets overflow:hidden, so the page is pinned with position:fixed at its current offset and put
       // back exactly there when the last sheet closes (otherwise closing a sheet "jumped" to the top).
-      let lockedY = null;
       function lockScroll() {
         if (lockedY !== null) return;
         lockedY = window.scrollY;
