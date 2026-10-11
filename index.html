@@ -3363,6 +3363,102 @@
         vertical-align: 1px;
         margin-left: 2px;
       }
+      .ktag {
+        display: inline-block;
+        font-size: 10.5px;
+        font-weight: 600;
+        line-height: 1.45;
+        color: var(--kc);
+        border: 1px solid color-mix(in srgb, var(--kc) 55%, transparent);
+        background: color-mix(in srgb, var(--kc) 10%, transparent);
+        border-radius: 5px;
+        padding: 0 4px;
+        vertical-align: 1px;
+        margin-left: 2px;
+      }
+      .kchips,
+      .kstrip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .kstrip {
+        padding: 8px 12px 10px;
+        background: var(--surface2);
+        border-top: 1px solid var(--hair);
+      }
+      .kchip {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 5px 11px;
+        font-size: 13.5px;
+        color: var(--muted);
+        background: var(--surface);
+        min-height: 32px;
+      }
+      .kchip[aria-pressed="true"] {
+        color: var(--kc);
+        border-color: var(--kc);
+        background: color-mix(in srgb, var(--kc) 14%, var(--surface));
+        font-weight: 600;
+      }
+      .kchip.clr {
+        color: var(--muted);
+      }
+      .kbar {
+        display: flex;
+        height: 14px;
+        border-radius: 7px;
+        overflow: hidden;
+        background: var(--surface2);
+        margin-top: 8px;
+      }
+      .kbar i {
+        display: block;
+        height: 100%;
+      }
+      .kbar i.un {
+        background: repeating-linear-gradient(135deg, var(--line) 0 4px, transparent 4px 8px);
+      }
+      .legend.kleg {
+        margin-top: 6px;
+      }
+      .legend.kleg > div {
+        display: grid;
+        grid-template-columns: 22px minmax(0, 1fr) auto;
+        grid-template-rows: auto auto;
+        column-gap: 10px;
+        row-gap: 2px;
+        align-items: center;
+        padding: 7px 2px;
+        border-top: 1px solid var(--line);
+      }
+      .legend.kleg > div:first-child {
+        border-top: 0;
+      }
+      .legend .sw.un {
+        background: repeating-linear-gradient(135deg, var(--line) 0 4px, transparent 4px 8px);
+      }
+      .kedit .ksw {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .kedit .ksw button {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: var(--kc);
+        border: 3px solid transparent;
+        box-shadow: 0 0 0 1px var(--line);
+      }
+      .kedit .ksw button[aria-pressed="true"] {
+        border-color: var(--surface);
+        box-shadow: 0 0 0 2px var(--kc);
+      }
+      .kedit .frow > label {
+        font-size: 13px;
+      }
       .txw.flagged .tx {
         background: color-mix(in srgb, var(--warn) 9%, var(--surface));
       }
@@ -3754,8 +3850,18 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "2.4.3";
+      const APP_VERSION = "2.5.0";
       const CHANGELOG = [
+        [
+          "2.5.0",
+          "2026-10-11",
+          [
+            "支出型態：每筆支出可以貼一個型態——固定（房貸、保險、訂閱）、日常（三餐、交通）、一次性（家電、修繕）、享受（娛樂、犒賞）；名稱、顏色、要不要再加幾種都能在「管理型態」改",
+            "記帳頁多一列「型態」；同一個分類／子分類選過一次，下次記帳會自動帶入（可改）",
+            "更多›型態標記：整月支出逐筆貼型態，未標記的排前面；可一鍵「依分類規則補上」，標一筆時也會問要不要把同分類的一起標",
+            "主頁›月 多一張「支出型態」卡；「本月進度」與「對照」改以你的型態為準（固定→固定、一次性→大額），沒標的才用自動判斷",
+          ],
+        ],
         [
           "2.4.3",
           "2026-10-11",
@@ -5145,6 +5251,308 @@
       // opt.hideAcc: the account whose page this row is on (name dropped, transfers show the other side)
       // opt.extra:   HTML for a second small line under the amount (e.g. running balance)
       // opt.mark:    lowercase words to highlight
+      /* ========== 支出型態: one tag per expense — 固定／日常／一次性／享受 (names, colours and roles editable) ========== */
+      const KIND_DEFAULTS = [
+        { id: "fix", n: "固定", c: "#4f7bd8", r: "fix", d: "每月都會來、躲不掉：房貸、保險、水電、訂閱" },
+        { id: "need", n: "日常", c: "#2f9e7a", r: "daily", d: "必要但金額會變：三餐、交通、日用品" },
+        {
+          id: "once",
+          n: "一次性",
+          c: "#c98a2b",
+          r: "big",
+          d: "買了短時間不會再買：家電、家具、修繕、醫療大筆",
+        },
+        { id: "want", n: "享受", c: "#c4567a", r: "daily", d: "想要而非必要：娛樂、治裝、旅遊、犒賞自己" },
+      ];
+      const KIND_COLORS = [
+        "#4f7bd8",
+        "#2f9e7a",
+        "#c98a2b",
+        "#c4567a",
+        "#7a6bcf",
+        "#2a9bb5",
+        "#8a8f3a",
+        "#b55a3c",
+      ];
+      const KIND_ROLES = [
+        ["fix", "固定"],
+        ["daily", "日常"],
+        ["big", "大額"],
+      ];
+      function kinds() {
+        if (!Array.isArray(S.meta.kinds) || !S.meta.kinds.length)
+          S.meta.kinds = KIND_DEFAULTS.map((k) => Object.assign({}, k));
+        return S.meta.kinds;
+      }
+      const kindOf = (id) => (id ? kinds().find((k) => k.id === id) || null : null);
+      // how 對照 treats a tagged entry: "fix" | "daily" | "big" ("" = untagged → the automatic rules)
+      const kindRole = (t) => {
+        const k = t.t === "e" ? kindOf(t.k) : null;
+        return k ? k.r || "daily" : "";
+      };
+      const kindTag = (t) => {
+        const k = t.t === "e" ? kindOf(t.k) : null;
+        return k ? ` <span class="ktag" style="--kc:${k.c}">${esc(k.n)}</span>` : "";
+      };
+      // the kind last chosen for a 分類|子分類 is remembered and pre-filled on the next entry of that category
+      const ruleKey = (c, s) => `${c || ""}|${s || ""}`;
+      const ruleKind = (c, s) => {
+        const id = (S.meta.kindRules || {})[ruleKey(c, s)] || (S.meta.kindRules || {})[ruleKey(c, "")] || "";
+        return kindOf(id) ? id : "";
+      };
+      function learnKind(c, s, id) {
+        const R = S.meta.kindRules || (S.meta.kindRules = {});
+        if (id) R[ruleKey(c, s)] = id;
+        else delete R[ruleKey(c, s)];
+      }
+      function setKind(t, id, { learn = true } = {}) {
+        if (id) t.k = id;
+        else delete t.k;
+        putTx(t);
+        if (learn) learnKind(t.c, t.s, id);
+        saveMeta();
+        rebuild();
+      }
+      // a month's expenses split by kind (plus the untagged remainder)
+      function kindSplit(m) {
+        const by = {};
+        let tot = 0,
+          un = 0,
+          unN = 0;
+        const L = [];
+        for (const t of monthTx(m)) {
+          if (t.t !== "e" || D.excl.has(t.c)) continue;
+          const v = sub(t);
+          tot += v;
+          L.push(t);
+          if (kindOf(t.k)) by[t.k] = (by[t.k] || 0) + v;
+          else {
+            un += v;
+            unN++;
+          }
+        }
+        return { by, tot, un, unN, L };
+      }
+      function kindBarHTML(sp, { legend = true } = {}) {
+        if (!sp.tot) return `<div class="empty">這個月沒有支出</div>`;
+        const seg = kinds()
+          .filter((k) => sp.by[k.id])
+          .map(
+            (k) =>
+              `<i style="width:${((sp.by[k.id] / sp.tot) * 100).toFixed(2)}%;background:${k.c}" title="${esc(k.n)} ${money(sp.by[k.id])}"></i>`,
+          )
+          .join("");
+        const unW = ((sp.un / sp.tot) * 100).toFixed(2);
+        let h = `<div class="kbar">${seg}${sp.un ? `<i class="un" style="width:${unW}%" title="未標記 ${money(sp.un)}"></i>` : ""}</div>`;
+        if (legend)
+          h += `<div class="legend kleg">${kinds()
+            .filter((k) => sp.by[k.id])
+            .map(
+              (k) =>
+                `<div><span class="sw" style="background:${k.c}"></span><span class="nm">${esc(k.n)}</span><span class="lv num">${money(sp.by[k.id])}</span><span class="meta"><span class="pc">${((sp.by[k.id] / sp.tot) * 100).toFixed(0)}%</span></span></div>`,
+            )
+            .join("")}${
+            sp.un
+              ? `<div><span class="sw un"></span><span class="nm muted">未標記 · ${sp.unN} 筆</span><span class="lv num muted">${money(sp.un)}</span><span class="meta"><span class="pc">${((sp.un / sp.tot) * 100).toFixed(0)}%</span></span></div>`
+              : ""
+          }</div>`;
+        return h;
+      }
+      const kindChips = (cur, extra = "") =>
+        kinds()
+          .map(
+            (k) =>
+              `<button type="button" class="kchip" data-kind="${k.id}" aria-pressed="${cur === k.id}" style="--kc:${k.c}"${extra}>${esc(k.n)}</button>`,
+          )
+          .join("");
+      // 型態標記: the month's expenses, tap a row → pick its kind; untagged first
+      function openKinds(m0 = mkey(todayStr())) {
+        let pick = null,
+          onlyUn = true;
+        const cur = mkey(todayStr());
+        openSheet("型態標記", (api) => {
+          const sp = kindSplit(m0);
+          const un = sp.L.filter((t) => !kindOf(t.k));
+          const byRule = un.filter((t) => ruleKind(t.c, t.s)).length;
+          const list = (onlyUn && un.length ? un : sp.L).slice();
+          const tagged = sp.L.length - un.length;
+          api.body.innerHTML = `<div class="stack kinds">
+      <div class="card slim"><div class="meta-line"><button class="iconbtn" data-km="-1" aria-label="上個月">‹</button><span class="st" style="text-align:center;flex:1">${m0 === cur ? "本月 " : ""}${m0.replace("-", "/")}</span><button class="iconbtn" data-km="1" aria-label="下個月" ${m0 >= cur ? "disabled" : ""}>›</button></div></div>
+      <div class="card"><div class="rowhead"><h3>支出型態</h3><button class="tapline" data-kmgr>管理型態 ›</button></div>${kindBarHTML(sp)}
+        <div class="small muted" style="margin-top:8px">${
+          sp.L.length
+            ? `${tagged}／${sp.L.length} 筆已標記。點清單裡的項目選型態；同一個分類下次記帳會自動帶入。`
+            : "這個月沒有支出可標記。"
+        }</div>
+        ${
+          byRule
+            ? `<div style="margin-top:8px"><button class="btn sm" data-krule>依分類規則補上 ${byRule} 筆 ›</button></div>`
+            : ""
+        }</div>
+      ${
+        sp.L.length
+          ? `<div class="meta-line" style="margin:0 4px -4px"><span class="small muted">${onlyUn && un.length ? `只看未標記（${un.length} 筆）` : `全部（${sp.L.length} 筆）`}</span><button class="tapline" data-kall>${onlyUn && un.length ? "看全部" : un.length ? "只看未標記" : ""}</button></div>` +
+            (list.length ? dayGroups(list, { year: m0.slice(0, 4) !== cur.slice(0, 4) }) : "")
+          : ""
+      }
+    </div>`;
+          // the chip strip sits right under the picked row
+          if (pick) {
+            const row = api.body.querySelector(`.tx[data-tx="${CSS.escape(pick)}"]`);
+            const t = row && findTx(row.dataset.tx, row.dataset.d);
+            if (row && t)
+              row.insertAdjacentHTML(
+                "afterend",
+                `<div class="kstrip">${kindChips(t.k || "")}${t.k ? `<button type="button" class="kchip clr" data-kind="">清除</button>` : ""}</div>`,
+              );
+          }
+          api.body.onclick = (ev) => {
+            const nav = ev.target.closest("[data-km]");
+            if (nav) {
+              const n = addMonths(m0, +nav.dataset.km);
+              if (n > cur) return;
+              m0 = n;
+              pick = null;
+              api.refresh();
+              return;
+            }
+            if (ev.target.closest("[data-kall]")) {
+              onlyUn = !onlyUn;
+              pick = null;
+              api.refresh();
+              return;
+            }
+            if (ev.target.closest("[data-kmgr]")) {
+              openKindMgr(() => api.refresh());
+              return;
+            }
+            if (ev.target.closest("[data-krule]")) {
+              let n = 0;
+              for (const t of sp.L)
+                if (!kindOf(t.k) && ruleKind(t.c, t.s)) {
+                  t.k = ruleKind(t.c, t.s);
+                  putTx(t);
+                  n++;
+                }
+              rebuild();
+              toast(`已依分類規則標記 ${n} 筆`);
+              api.refresh();
+              return;
+            }
+            const chip = ev.target.closest("[data-kind]");
+            if (chip && pick) {
+              const row = api.body.querySelector(`.tx[data-tx="${CSS.escape(pick)}"]`);
+              const t = row && findTx(row.dataset.tx, row.dataset.d);
+              if (!t) return;
+              const id = chip.dataset.kind;
+              setKind(t, id);
+              const k = kindOf(id);
+              // the same 分類／子分類 elsewhere this month, still untagged
+              const same = sp.L.filter(
+                (x) => x !== t && !kindOf(x.k) && ruleKey(x.c, x.s) === ruleKey(t.c, t.s),
+              );
+              if (k && same.length)
+                toast(`「${t.s || t.c || "未分類"}」還有 ${same.length} 筆沒標`, {
+                  label: `都標成${k.n}`,
+                  fn: () => {
+                    for (const x of same) {
+                      x.k = id;
+                      putTx(x);
+                    }
+                    rebuild();
+                    const keepY2 = api.body.scrollTop;
+                    api.refresh();
+                    api.body.scrollTop = keepY2;
+                  },
+                });
+              pick = null;
+              const keepY = api.body.scrollTop;
+              api.refresh();
+              api.body.scrollTop = keepY;
+              return;
+            }
+            const row = ev.target.closest("[data-tx]");
+            if (!row) return;
+            pick = pick === row.dataset.tx ? null : row.dataset.tx;
+            const keepY = api.body.scrollTop;
+            api.refresh();
+            api.body.scrollTop = keepY;
+          };
+        });
+      }
+      // 管理型態: rename, recolour, pick the 對照 role, add or remove kinds
+      function openKindMgr(onDone) {
+        openSheet(
+          "管理型態",
+          (api) => {
+            const K = kinds();
+            api.body.innerHTML = `<div class="stack">
+      <div class="card"><div class="small muted">名稱與顏色會出現在清單的標籤上；「對照時當作」決定「本月進度」和「對照」把它算成固定、日常還是大額。</div></div>
+      ${K.map(
+        (k, i) => `<div class="card kedit" data-i="${i}">
+        <div class="frow"><label>名稱</label><input class="inp" data-kn value="${esc(k.n)}" maxlength="6" aria-label="型態名稱"></div>
+        <div class="frow"><label>顏色</label><div class="ksw">${KIND_COLORS.map((c) => `<button type="button" data-kc="${c}" aria-pressed="${c === k.c}" style="--kc:${c}" aria-label="${c}"></button>`).join("")}</div></div>
+        <div class="frow"><label>對照時當作</label><div class="seg" role="group">${KIND_ROLES.map(([r, l]) => `<button type="button" data-kr="${r}" aria-pressed="${(k.r || "daily") === r}">${l}</button>`).join("")}</div></div>
+        <div class="frow"><label>說明</label><input class="inp" data-kd value="${esc(k.d || "")}" placeholder="選填" aria-label="說明"></div>
+        ${K.length > 1 ? `<div style="text-align:right"><button class="btn sm danger" data-kdel>移除這個型態</button></div>` : ""}
+      </div>`,
+      ).join("")}
+      <div class="card"><button class="btn sm" data-kadd>＋ 新增型態</button></div>
+    </div>`;
+            const read = () => {
+              api.body.querySelectorAll(".kedit").forEach((card) => {
+                const k = K[+card.dataset.i];
+                const n = card.querySelector("[data-kn]").value.trim();
+                if (n) k.n = n;
+                k.d = card.querySelector("[data-kd]").value.trim();
+              });
+            };
+            api.body.onchange = () => {
+              read();
+              saveMeta();
+            };
+            api.body.onclick = (ev) => {
+              const b = ev.target.closest("button");
+              if (!b) return;
+              const card = b.closest(".kedit"),
+                k = card && K[+card.dataset.i];
+              read();
+              if (b.dataset.kc && k) k.c = b.dataset.kc;
+              else if (b.dataset.kr && k) k.r = b.dataset.kr;
+              else if (b.hasAttribute("data-kdel") && k) {
+                const used = D.tx.filter((t) => t.k === k.id).length;
+                if (used && !confirm(`有 ${used} 筆支出標著「${k.n}」，移除後它們會變回未標記。確定？`))
+                  return;
+                K.splice(K.indexOf(k), 1);
+                for (const [key, id] of Object.entries(S.meta.kindRules || {}))
+                  if (id === k.id) delete S.meta.kindRules[key];
+              } else if (b.hasAttribute("data-kadd")) {
+                const used = new Set(K.map((x) => x.c));
+                K.push({
+                  id: "k" + Date.now().toString(36),
+                  n: "新型態",
+                  c: KIND_COLORS.find((c) => !used.has(c)) || KIND_COLORS[K.length % KIND_COLORS.length],
+                  r: "daily",
+                  d: "",
+                });
+              } else return;
+              saveMeta();
+              rebuild();
+              api.refresh();
+            };
+          },
+          { back: true },
+        );
+        // when this sheet closes, the page under it re-reads the names
+        const el = $("#sheets").lastElementChild;
+        if (el && onDone)
+          new MutationObserver((_, o) => {
+            if (!el.isConnected) {
+              o.disconnect();
+              onDone();
+            }
+          }).observe($("#sheets"), { childList: true });
+      }
       function txRow(t, opt = {}) {
         const L = txLabel(t),
           v = sub(t);
@@ -5195,7 +5603,7 @@
         const mk = opt.mark;
         return `<div class="txw${t.fl ? " flagged" : ""}"><button class="tx" data-tx="${esc(t.id)}" data-d="${t.d}">
     <span class="badge" style="--c:${L.color}">${esc(L.ch)}</span>
-    <span class="mid"><div class="t1">${mk ? markHTML(title, mk) : esc(title)}${t.rec ? ' <span class="muted small">↻</span>' : ""}${t.fl ? ' <span class="fltag">可避免</span>' : ""}</div><div class="t2">${mk ? markHTML(bits.join(" · "), mk) : esc(bits.join(" · "))}</div></span>
+    <span class="mid"><div class="t1">${mk ? markHTML(title, mk) : esc(title)}${t.rec ? ' <span class="muted small">↻</span>' : ""}${t.fl ? ' <span class="fltag">可避免</span>' : ""}${kindTag(t)}</div><div class="t2">${mk ? markHTML(bits.join(" · "), mk) : esc(bits.join(" · "))}</div></span>
     <span class="amt ${cls}"><span>${amtHTML}</span>${fx}${opt.extra || ""}</span></button></div>`;
       }
       // one <section class="day"> per date, newest first
@@ -5408,8 +5816,9 @@
             o.e += v;
             o.cum[d] += v;
             o.cats[c] = (o.cats[c] || 0) + v;
-            if (fixedKeys.has(keyOf(t))) o.fixed += v;
-            else if (v >= bigAt(c)) {
+            const role = kindRole(t); // the user's tag wins over the automatic rules
+            if (role === "fix" || (!role && fixedKeys.has(keyOf(t)))) o.fixed += v;
+            else if (role === "big" || (!role && v >= bigAt(c))) {
               o.big += v;
               o.bigs.push(t);
               continue;
@@ -5885,6 +6294,11 @@
             h += cmpStoryHTML(C, dd);
             h += `<div class="card chart"><div class="rowhead"><h3>本月進度</h3><div class="seg" role="group" aria-label="範圍"><button data-act="cmpAll" data-v="0" aria-pressed="${!S.cmpAll}">不含大額</button><button data-act="cmpAll" data-v="1" aria-pressed="${!!S.cmpAll}">全部</button></div></div><div id="cmpprog" data-m="${mkey(td)}" style="margin-top:6px"></div>
     <div class="plegend"><span><i style="background:var(--exp)"></i>本月</span><span><i class="dash" style="border-color:var(--accent)"></i>上月</span><span><i class="dot" style="border-color:var(--muted)"></i>典型月</span><span><i class="band"></i>常見範圍</span><button class="tapline" data-act="goCmp">更多對照 ›</button></div></div>`;
+          }
+          {
+            const sp = kindSplit(mkey(td));
+            if (sp.tot)
+              h += `<div class="card"><div class="rowhead"><h3>支出型態</h3><button class="tapline" data-act="kinds">${sp.unN ? `去標記（還有 ${sp.unN} 筆）›` : "型態標記 ›"}</button></div>${kindBarHTML(sp)}</div>`;
           }
           h += `<div class="card chart"><div class="rowhead"><h3>近 12 個月收支</h3><span class="small muted"><span class="inc">■</span> 收入　<span class="exp">■</span> 支出</span></div><div id="htrend" data-kind="months" style="margin-top:8px"></div><div class="small muted">點任一個月的長條，就會到那個月的明細</div></div>`;
           h += topList("本月最大幾筆", homeTop(p.a, p.b));
@@ -7512,6 +7926,7 @@
           '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 4v5M17.7 8.3l-3.5 3.5"/>',
         wd: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
         review: '<path d="M4 6h16M4 12h10M4 18h7"/><path d="M15 17l2 2 4-4"/>',
+        kind: '<path d="M4 4h7l9 9-7 7-9-9z"/><circle cx="8.5" cy="8.5" r="1.5"/>',
       };
       const svgI = (k) =>
         `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>`;
@@ -7525,7 +7940,7 @@
           lb = /^\d{4}-\d{2}-\d{2}$/.test(String(S.meta.lastBackup || ""))
             ? S.meta.lastBackup.replace(/-/g, "/")
             : "";
-        return `<div class="mh">管理</div><div class="menu">${it("budgets", "budget", "預算", S.meta.budgets?.total ? "每月 " + money(S.meta.budgets.total) : "還沒設定")}${it("recurring", "rec", "定期記帳", rc ? rc + " 筆" : "房租、電話費這類每月固定的帳")}${it("projects", "proj", "專案", pj ? pj + " 個專案" : "一趟旅行、一次裝修的花費集中看")}${it("cats", "cat", "分類", "新增、排序、改名、顏色")}${it("search", "search", "搜尋帳目", "依備註、金額、分類、帳戶找舊帳")}${it("review", "review", "週復盤", "逐筆看這週的支出，標出可避免的")}</div>
+        return `<div class="mh">管理</div><div class="menu">${it("budgets", "budget", "預算", S.meta.budgets?.total ? "每月 " + money(S.meta.budgets.total) : "還沒設定")}${it("recurring", "rec", "定期記帳", rc ? rc + " 筆" : "房租、電話費這類每月固定的帳")}${it("projects", "proj", "專案", pj ? pj + " 個專案" : "一趟旅行、一次裝修的花費集中看")}${it("cats", "cat", "分類", "新增、排序、改名、顏色")}${it("search", "search", "搜尋帳目", "依備註、金額、分類、帳戶找舊帳")}${it("review", "review", "週復盤", "逐筆看這週的支出，標出可避免的")}${it("kinds", "kind", "型態標記", "固定、日常、一次性、享受——幫每筆支出貼上型態")}</div>
   <div class="mh">資料</div><div class="menu">${it("backup", "save", "備份", lb ? "上次備份 " + lb : "存一份到 iCloud 雲碟或「檔案」App")}${it("restore", "imp", "還原備份", "")}${it("import", "imp", "從 CWMoney 匯入", "把 CWMoney 匯出的檔案帶進來")}${it("export", "exp", "匯出成 CWMoney 格式", "可以匯回 CWMoney，或用試算表打開")}${it("recon", "acct", "對帳", "一次填好所有帳戶的實際餘額，可分多次做")}</div>
   <div class="mh">設定</div><div class="menu">${it("settings", "set", "設定", "外觀、啟動、記帳畫面、明細與報表、帳戶與分類、資料")}${it("about", "info", "關於", "v" + APP_VERSION + "、資料存在哪裡、加到主畫面", true)}</div>
   <p class="small muted" style="text-align:center;margin-top:18px">${S.mode === "sample" ? "範例模式，不會儲存" : "資料只存在這支手機"}　·　${D.count.toLocaleString()} 筆${D.first ? `，自 ${D.first.slice(0, 7).replace("-", "/")} 起` : ""}</p>`;
@@ -7829,6 +8244,7 @@
               render();
             },
             review: () => openReview(),
+            kinds: () => openKinds(),
             homeYearNow: () => {
               S.homeYear = null;
               render();
@@ -8314,6 +8730,9 @@
         R.keys = !editing && !preset.expr; // the keypad shows while the amount is being typed
         R.view = "form"; // "form" | "fav" (常用)
         R.inv = (tx && tx.inv) || preset.inv || "";
+        R.k = (tx && tx.k) || preset.k || ""; // 型態 (expenses)
+        R.kTouched = false; // set once the user picks a chip; until then the category's rule pre-fills it
+        if (!editing && !R.k && R.c) R.k = ruleKind(R.c, R.s);
         const expr0 = R.expr; // amount as opened: unchanged → tx.a is written back untouched
         if (!tx && !preset.cur && R.cur !== "TWD") R.r = lastRate(R.cur);
         R.fresh = !!R.expr; // the first digit replaces the amount shown (A-04)
@@ -8747,6 +9166,12 @@
                 : "") +
               (R.t === "e"
                 ? frow(
+                    "型態",
+                    `<div class="kchips" role="group" aria-label="型態">${kindChips(R.k || "")}</div>`,
+                  )
+                : "") +
+              (R.t === "e"
+                ? frow(
                     "發票號碼",
                     `<input class="inp num" id="rInv" placeholder="選填" value="${esc(R.inv || "")}" aria-label="發票號碼" autocomplete="off" autocapitalize="characters">`,
                   )
@@ -8896,7 +9321,7 @@
             ts: editing ? tx.ts || Date.now() : Date.now(),
           };
           if (editing) {
-            for (const k of ["ct", "gps", "addr", "inv", "its", "igps", "iaddr", "iinv", "rec", "fl"])
+            for (const k of ["ct", "gps", "addr", "inv", "its", "igps", "iaddr", "iinv", "rec", "fl", "k"])
               if (tx[k] !== undefined) t[k] = tx[k];
             const same =
               tx.t === t.t && (sameAmt || +tx.a === t.a) && (+tx.r || 1) === (R.cur !== "TWD" ? +R.r : 1);
@@ -8918,6 +9343,9 @@
           if (R.t === "e") {
             if (R.inv) t.inv = R.inv;
             else delete t.inv;
+            if (R.k && kindOf(R.k)) t.k = R.k;
+            else delete t.k;
+            if (R.kTouched) learnKind(t.c, t.s, t.k || "");
           }
           if (editing && tx.n != null && R.n === flatNote(tx.n))
             t.n = tx.n; // unchanged multi-line note from CWMoney
@@ -8976,6 +9404,13 @@
           if (!b) return;
           if (b.hasAttribute("data-close")) {
             tryClose();
+            return;
+          }
+          if (b.dataset.kind !== undefined && b.closest(".kchips")) {
+            readFields();
+            R.k = R.k === b.dataset.kind ? "" : b.dataset.kind;
+            R.kTouched = true;
+            draw();
             return;
           }
           if (b.dataset.k) {
@@ -9060,6 +9495,7 @@
             R.to = f.to || R.to;
             R.n = f.note || "";
             R.p = f.p || "";
+            R.k = f.k || ruleKind(R.c, R.s);
             R.accTouched = true;
             if (f.a) {
               R.expr = String(f.a);
@@ -9101,7 +9537,17 @@
             inlineAdd(
               "常用名稱",
               (name) => {
-                const f = { n: name, t: R.t, c: R.c, s: R.s, acc: R.acc, to: R.to, note: R.n.trim(), p: R.p };
+                const f = {
+                  n: name,
+                  t: R.t,
+                  c: R.c,
+                  s: R.s,
+                  acc: R.acc,
+                  to: R.to,
+                  note: R.n.trim(),
+                  p: R.p,
+                  k: R.k,
+                };
                 if (vv > 0) f.a = r2(vv);
                 (S.meta.favs || (S.meta.favs = [])).push(f);
                 saveMeta();
@@ -9429,6 +9875,7 @@
             if (m && !m.s.includes(R.s)) R.s = "";
             R.guess = false;
             R.nsugAll = false;
+            if (!editing && !R.kTouched) R.k = ruleKind(R.c, R.s);
             autoAcc();
             draw();
             return;
@@ -9450,6 +9897,7 @@
             R.s = e.target.value;
             R.guess = false;
             R.nsugAll = false;
+            if (!editing && !R.kTouched) R.k = ruleKind(R.c, R.s);
             autoAcc();
             draw();
             return;
