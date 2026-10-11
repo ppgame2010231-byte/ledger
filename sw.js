@@ -1,5 +1,5 @@
 // 逐筆帳本 service worker: app shell works offline; the page is fetched fresh when online so updates arrive.
-const VERSION = "ledger-2.4.0"; // keep in step with APP_VERSION in index.html
+const VERSION = "ledger-2.4.1"; // keep in step with APP_VERSION in index.html
 const SHELL = [
   "./",
   "./index.html",

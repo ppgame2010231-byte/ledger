@@ -20,10 +20,30 @@
       img {
         max-width: 100%;
       }
+      /* App shell: the document itself never scrolls. body is pinned to the screen and sized to the visible
+         area (--vvh / --vvo follow visualViewport, see viewportFix), the page scrolls inside .scroller and the
+         tab bar sits in the same box — so iOS cannot leave the page scrolled or offset after the keyboard, a
+         tap near the bottom edge, or a sheet (position:fixed used to drift on iOS 26). */
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
       body {
         margin: 0;
+        position: fixed;
+        inset: 0;
+        height: var(--vvh, 100%);
+        transform: translateY(var(--vvo, 0px));
       }
-      :root {
+      .scroller {
+        position: absolute;
+        inset: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
         padding-top: env(safe-area-inset-top, 0px);
       }
       .sbar {
@@ -125,8 +145,7 @@
       * {
         box-sizing: border-box;
       }
-      html,
-      body {
+      html {
         height: 100%;
       }
       body {
@@ -1442,6 +1461,9 @@
         padding-top: env(safe-area-inset-top, 0px);
         padding-bottom: var(--sab);
         animation: up 0.18s ease-out;
+      }
+      body.kbd .sheet {
+        padding-bottom: 0; /* keyboard up: the home-indicator strip is under the keyboard */
       }
       @keyframes up {
         from {
@@ -3616,26 +3638,34 @@
   </head>
   <body>
     <div class="sbar" aria-hidden="true"></div>
-    <div class="app" id="app">
-      <header class="top">
-        <h1>
-          <span id="viewTitle">主頁</span>
-          <button class="ver" id="verBtn" aria-label="版本紀錄"></button>
-        </h1>
-        <button class="iconbtn" id="hSearch" aria-label="搜尋帳目">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <circle cx="11" cy="11" r="6.5" />
-            <path d="M20 20l-4.2-4.2" />
-          </svg>
-        </button>
-        <button class="mtoday" id="mToday" hidden>回本月</button>
-        <div class="mswitch" id="mswitch">
-          <button id="mPrev" aria-label="上個月">‹</button>
-          <span class="mlabel" id="mLabel">2026/10</span>
-          <button id="mNext" aria-label="下個月">›</button>
-        </div>
-      </header>
-      <main id="view" class="stack"><div class="card empty">載入帳本中…</div></main>
+    <div class="scroller" id="scroller">
+      <div class="app" id="app">
+        <header class="top">
+          <h1>
+            <span id="viewTitle">主頁</span>
+            <button class="ver" id="verBtn" aria-label="版本紀錄"></button>
+          </h1>
+          <button class="iconbtn" id="hSearch" aria-label="搜尋帳目">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            >
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="M20 20l-4.2-4.2" />
+            </svg>
+          </button>
+          <button class="mtoday" id="mToday" hidden>回本月</button>
+          <div class="mswitch" id="mswitch">
+            <button id="mPrev" aria-label="上個月">‹</button>
+            <span class="mlabel" id="mLabel">2026/10</span>
+            <button id="mNext" aria-label="下個月">›</button>
+          </div>
+        </header>
+        <main id="view" class="stack"><div class="card empty">載入帳本中…</div></main>
+      </div>
     </div>
 
     <button class="fab" id="fab" aria-label="記一筆">
@@ -3725,8 +3755,16 @@
     <script>
       "use strict";
       /* ===== version: bump APP_VERSION (and VERSION in sw.js) on every release ===== */
-      const APP_VERSION = "2.4.0";
+      const APP_VERSION = "2.4.1";
       const CHANGELOG = [
+        [
+          "2.4.1",
+          "2026-10-11",
+          [
+            "版面改成「App 殼」：整個畫面釘在螢幕上、只有中間的清單會捲動，底下的分頁列不再靠 position:fixed——針對 iOS 26 點到底部那條、或收鍵盤後整頁往上縮、下面留黑邊的問題（錄影裡那個）",
+            "鍵盤彈出時畫面會跟著可見高度縮放，收起後一定回到原位",
+          ],
+        ],
         [
           "2.4.0",
           "2026-10-11",
@@ -3976,6 +4014,7 @@
       ];
       /* ========== utilities ========== */
       const $ = (s) => document.querySelector(s);
+      const SCR = $("#scroller"); // the one element that scrolls (see "App shell" in the CSS)
       const esc = (s) =>
         String(s ?? "").replace(
           /[&<>"']/g,
@@ -4186,9 +4225,11 @@
         return hue(name);
       }
       // device-only looks: text size, theme, density
+      let vvApply = null; // re-measures the shell against the visual viewport (set by viewportFix)
       function applyDevicePrefs() {
         const z = +lsGet("ledger.zoom", "1") || 1;
         document.documentElement.style.zoom = z === 1 ? "" : String(z);
+        if (vvApply) vvApply();
         const th = lsGet("ledger.theme", "system");
         if (th === "light" || th === "dark") document.documentElement.setAttribute("data-theme", th);
         else document.documentElement.removeAttribute("data-theme");
@@ -4751,7 +4792,7 @@
             S.tab = b.dataset.tab;
             S.rep.drill = null;
             render();
-            window.scrollTo(0, 0);
+            SCR.scrollTo(0, 0);
           }),
       );
       // in the report's 年 mode the arrows step a whole year
@@ -4823,7 +4864,7 @@
             } else if (b.dataset.m || b.hasAttribute("data-today")) {
               api.close();
               gotoMonth(b.dataset.m || cur);
-              window.scrollTo(0, 0);
+              SCR.scrollTo(0, 0);
             }
           };
         });
@@ -4842,25 +4883,37 @@
         probe.remove();
         document.documentElement.style.setProperty("--sab", px + "px");
       })();
-      // iOS and the on-screen keyboard: when a field inside a sheet gets focus, Safari scrolls the whole
-      // page up to reveal it and does not scroll back once the keyboard goes — the sheet then sits too high
-      // with a gap below it. Sheets are sized to the visible height, and the page is put back at 0 whenever
-      // the keyboard leaves.
-      let lockedY = null; // the page offset pinned by lockScroll() while a sheet is open (null = not locked)
+      // iOS and the on-screen keyboard: when a field gets focus, Safari scrolls the document to reveal it and
+      // (iOS 26) may leave the visual viewport offset afterwards — fixed elements then sit too high with a
+      // gap below. The document is kept at 0 and the whole shell is sized/offset to the visual viewport.
+      let lockedY = null; // the list scroll offset pinned by lockScroll() while a sheet is open (null = not locked)
       (function viewportFix() {
         const vv = window.visualViewport;
+        const root = document.documentElement.style;
         const put = () => {
-          if (lockedY !== null && (window.scrollY || (vv && vv.offsetTop))) window.scrollTo(0, 0);
+          if (window.scrollY || (vv && vv.offsetTop)) window.scrollTo(0, 0);
         };
         if (vv) {
           const apply = () => {
-            document.documentElement.style.setProperty("--vvh", Math.round(vv.height) + "px");
-            if (vv.height >= window.innerHeight - 40) put(); // keyboard gone (or never there)
+            put(); // the document must stay at 0 — iOS scrolls it to reveal a focused field
+            // text size uses CSS zoom on <html>, so viewport pixels are divided by it
+            const z = parseFloat(document.documentElement.style.zoom) || 1;
+            const h = Math.round(vv.height / z),
+              o = vv.scale === 1 ? Math.round(vv.offsetTop / z) : 0;
+            root.setProperty("--vvh", h + "px");
+            // iOS 26 can leave the visual viewport offset after the keyboard; the shell follows it
+            root.setProperty("--vvo", o + "px");
+            document.body.classList.toggle("kbd", h < window.innerHeight - 120);
+            const a = document.activeElement;
+            if (a && a.matches && a.matches("input,textarea") && h < window.innerHeight - 120)
+              setTimeout(() => a.scrollIntoView({ block: "nearest" }), 50);
           };
           vv.addEventListener("resize", apply);
           vv.addEventListener("scroll", apply);
+          vvApply = apply;
           apply();
         }
+        window.addEventListener("scroll", put, { passive: true });
         document.addEventListener("focusout", (e) => {
           if (!e.target.matches || !e.target.matches("input,textarea,select")) return;
           setTimeout(() => {
@@ -4982,7 +5035,7 @@
             if (i < 0 || i >= P.length) return;
             setSub(S.tab, P[i].id);
             render();
-            window.scrollTo(0, 0);
+            SCR.scrollTo(0, 0);
           },
           { passive: true },
         );
@@ -6236,7 +6289,7 @@
         unlockScroll();
         S.tab = "acct";
         render();
-        window.scrollTo(0, 0);
+        SCR.scrollTo(0, 0);
         if (typeof window.openAcctSort === "function") window.openAcctSort();
         else toast("按右上角 ⋯ 選「調整順序」");
       }
@@ -7472,7 +7525,7 @@
             S.tab = "list";
             setSub("list", "日曆");
             render();
-            window.scrollTo(0, 0);
+            SCR.scrollTo(0, 0);
             return;
           }
           const hit = e.target.closest("[data-month]");
@@ -7492,7 +7545,7 @@
             }
             S.calDay = null;
             render();
-            window.scrollTo(0, 0);
+            SCR.scrollTo(0, 0);
             return;
           }
           if (hit) {
@@ -7532,7 +7585,7 @@
             S.tab = "report";
             setSub("report", "分類");
             render();
-            window.scrollTo(0, 0);
+            SCR.scrollTo(0, 0);
             return;
           }
           const b = e.target.closest("button,[data-day]");
@@ -7547,7 +7600,7 @@
             // 主頁›總覽 card → that period's page
             setSub("home", b.dataset.hp);
             render();
-            window.scrollTo(0, 0);
+            SCR.scrollTo(0, 0);
             return;
           }
           if (b.dataset.hcat) {
@@ -7559,7 +7612,7 @@
             S.tab = "report";
             setSub("report", "分類");
             render();
-            window.scrollTo(0, 0);
+            SCR.scrollTo(0, 0);
             return;
           }
           if (b.dataset.proj !== undefined) {
@@ -7723,7 +7776,7 @@
                   fn: () => {
                     S.acctSort = true;
                     render();
-                    window.scrollTo(0, 0);
+                    SCR.scrollTo(0, 0);
                   },
                 },
                 {
@@ -7770,7 +7823,7 @@
               S.tab = "report";
               setSub("report", "分類");
               render();
-              window.scrollTo(0, 0);
+              SCR.scrollTo(0, 0);
             },
             // 主頁 chart tiles → the page that holds that chart, scrolled to it
             goChart: () => {
@@ -7801,14 +7854,14 @@
               S.tab = "report";
               setSub("report", "對照");
               render();
-              window.scrollTo(0, 0);
+              SCR.scrollTo(0, 0);
             },
             goList: () => {
               S.month = mkey(todayStr());
               S.tab = "list";
               setSub("list", "帳目");
               render();
-              window.scrollTo(0, 0);
+              SCR.scrollTo(0, 0);
             },
             reconHide: () => {
               lsSet("ledger.reconHide", "1");
@@ -7821,7 +7874,7 @@
                 setSub("acct", "帳戶");
                 S.acctShowHidden = true;
                 render();
-                window.scrollTo(0, 0);
+                SCR.scrollTo(0, 0);
                 return;
               }
               const d = v.querySelector("#hidDet");
@@ -7919,8 +7972,9 @@
               const t = v.querySelector(sel);
               const card = t && (t.closest(".card") || t);
               if (!card) return;
-              const y = card.getBoundingClientRect().top + window.scrollY - 64;
-              window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+              const y =
+                card.getBoundingClientRect().top + SCR.scrollTop - SCR.getBoundingClientRect().top - 64;
+              SCR.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
               card.classList.add("flash");
               setTimeout(() => card.classList.remove("flash"), 1200);
             }),
@@ -7952,32 +8006,19 @@
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
       const BI =
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>';
-      // While a sheet is open the page behind must not scroll — but iOS forgets the scroll position when
-      // body gets overflow:hidden, so the page is pinned with position:fixed at its current offset and put
-      // back exactly there when the last sheet closes (otherwise closing a sheet "jumped" to the top).
+      // While a sheet is open the list behind must not scroll; a scroll container keeps its offset under
+      // overflow:hidden, so the list is exactly where it was when the last sheet closes.
       function lockScroll() {
         if (lockedY !== null) return;
-        lockedY = window.scrollY;
-        const b = document.body;
-        b.style.position = "fixed";
-        b.style.top = -lockedY + "px";
-        b.style.left = "0";
-        b.style.right = "0";
-        b.style.width = "100%";
-        b.style.overflow = "hidden";
+        lockedY = SCR.scrollTop;
+        SCR.style.overflowY = "hidden";
       }
       function unlockScroll() {
         if (lockedY === null) return;
         const y = lockedY;
         lockedY = null;
-        const b = document.body;
-        b.style.position = "";
-        b.style.top = "";
-        b.style.left = "";
-        b.style.right = "";
-        b.style.width = "";
-        b.style.overflow = "";
-        window.scrollTo(0, y);
+        SCR.style.overflowY = "";
+        if (Math.abs(SCR.scrollTop - y) > 1) SCR.scrollTop = y;
       }
       // close a sheet with a slide-down; the page scroll comes back once no live sheet is left
       function dismissSheet(el) {
